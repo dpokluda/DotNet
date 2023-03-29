@@ -1,0 +1,18 @@
+﻿@page
+@model DeleteModel
+@{
+    ViewData["Title"] = "Delete employee";
+}
+
+<h1>@ViewData["Title"]</h1>
+<form method="post">
+    <div class="mb-3">
+        <input id="id" name="id" class="form-control visually-hidden" value="@Model.Id" hidden="true" />
+        Do you really want to delete @Model.Name?
+    </div>
+
+    <div>
+        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        <a type="button" class="btn btn-primary btn-sm" href="~/">Cancel</a>
+    </div>
+</form>

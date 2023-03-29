@@ -1,0 +1,58 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Employees";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Picture</th>
+        <th scope="col">Full name</th>
+        <th scope="col">Department</th>
+        <th scope="col">E-mail</th>
+        <th scope="col">Interests</th>
+        <th scope="col">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var employee in Model.Employees)
+    {
+        <tr>
+            <td>
+                @{
+                    if (employee.PictureUrl == null)
+                    {
+                        <i class="bi bi-file-person" id="placeholder"></i>
+                    }
+                    else
+                    {
+                        <img src="@employee.PictureUrl" />
+                    }
+                }
+            </td>
+            <td>@employee.Name</td>
+            <td>@employee.Department</td>
+            <td>@employee.Email</td>
+            <td>
+                @if (employee.IsMacUser)
+                {
+                    <i class="bi bi-apple"></i> 
+                }
+                @if (employee.IsWindowsUser)
+                {
+                    <i class="bi bi-microsoft"></i> 
+                }
+            </td>
+            <td>
+                <a type="button" class="btn btn-outline-primary btn-sm" href="~/Edit?id=@employee.Id">Edit</a>
+                <a type="button" class="btn btn-outline-danger btn-sm" href="~/Delete?id=@employee.Id">Delete</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<a type="button" class="btn btn-primary btn-sm" href="~/AddNew">Add new employee</a>
