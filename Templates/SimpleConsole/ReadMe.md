@@ -6,6 +6,13 @@ Simple console application demonstrating how to:
 - configure program argument parsing
 - use color console output
 
+The following command will print **Name** and the output will contain additional debug information.
+```sh
+dotnet run -- --debug
+# display help information 
+dotnet run -- --help
+```
+
 # Further customizations
 
 There are two versions of the program, one is using simpler [DragonFruit](https://github.com/dotnet/command-line-api/blob/main/docs/DragonFruit-overview.md) 
