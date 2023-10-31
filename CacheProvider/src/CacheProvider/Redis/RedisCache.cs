@@ -35,7 +35,12 @@ namespace RedisCacheProvider
                       .Handle<RedisConnectionException>()
                       .Or<SocketException>()
                       .Or<ObjectDisposedException>()
-                      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+                      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                          (exception, timeSpan, retryCount, context) =>
+                          {
+                              RedisLazyReconnect.ForceReconnect();
+                              _redis = RedisLazyReconnect.Connection;
+                          });
         }
 
         /// <summary>
