@@ -1,7 +1,7 @@
 ﻿using StackExchange.Redis;
 
 // Source Code Usage License: https://gist.github.com/JonCole/34ca1d2698da7a1aa65ff781c37ecdea
-static class Redis
+static class RedisLazyReconnect
 {
     static long lastReconnectTicks = DateTimeOffset.MinValue.UtcTicks;
     static DateTimeOffset firstError = DateTimeOffset.MinValue;
@@ -20,7 +20,10 @@ static class Redis
     static string connectionString = "TODO: CALL InitializeConnectionString() method with connection string";
     static Lazy<ConnectionMultiplexer> multiplexer = CreateMultiplexer();
 
-    public static ConnectionMultiplexer Connection { get { return multiplexer.Value; } }
+    public static ConnectionMultiplexer Connection
+    {
+        get { return multiplexer.Value; }
+    }
 
     public static void InitializeConnectionString(string cnxString)
     {
@@ -31,15 +34,14 @@ static class Redis
     }
 
     /// <summary>
-    /// Force a new ConnectionMultiplexer to be created.  
-    /// NOTES: 
+    ///     Force a new ConnectionMultiplexer to be created.
+    ///     NOTES:
     ///     1. Users of the ConnectionMultiplexer MUST handle ObjectDisposedExceptions, which can now happen as a result of calling ForceReconnect()
     ///     2. Don't call ForceReconnect for Timeouts, just for RedisConnectionExceptions or SocketExceptions
     ///     3. Call this method every time you see a connection exception, the code will wait to reconnect:
-    ///         a. for at least the "ReconnectErrorThreshold" time of repeated errors before actually reconnecting
-    ///         b. not reconnect more frequently than configured in "ReconnectMinFrequency"
-
-    /// </summary>    
+    ///     a. for at least the "ReconnectErrorThreshold" time of repeated errors before actually reconnecting
+    ///     b. not reconnect more frequently than configured in "ReconnectMinFrequency"
+    /// </summary>
     public static void ForceReconnect()
     {
         var utcNow = DateTimeOffset.UtcNow;
@@ -70,7 +72,7 @@ static class Redis
                 var elapsedSinceMostRecentError = utcNow - previousError;
 
                 var shouldReconnect =
-                    elapsedSinceFirstError >= ReconnectErrorThreshold   // make sure we gave the multiplexer enough time to reconnect on its own if it can
+                    elapsedSinceFirstError >= ReconnectErrorThreshold // make sure we gave the multiplexer enough time to reconnect on its own if it can
                     && elapsedSinceMostRecentError <= ReconnectErrorThreshold; //make sure we aren't working on stale data (e.g. if there was a gap in errors, don't reconnect yet).
 
                 // Update the previousError timestamp to be now (e.g. this reconnect request)

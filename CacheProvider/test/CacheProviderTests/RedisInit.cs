@@ -10,12 +10,12 @@ public class RedisInit
     [AssemblyInitialize]
     public static void StartRedis(TestContext testContext)
     {
-        _redis = Process.Start("redis\\redis-server.exe");
+        // _redis = Process.Start("redis\\redis-server.exe");
     }
 
     [AssemblyCleanup]
     public static void StopRedis()
     {
-        _redis.Kill(true);
+        // _redis.Kill(true);
     }
 }
