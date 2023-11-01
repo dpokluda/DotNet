@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using CacheProvider;
 using CacheProvider.Configuration;
+using CacheProvider.Lua;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -35,7 +36,7 @@ namespace RedisCacheProvider
                       .Handle<RedisConnectionException>()
                       .Or<SocketException>()
                       .Or<ObjectDisposedException>()
-                      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                      .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt-1)),
                           (exception, timeSpan, retryCount, context) =>
                           {
                               RedisLazyReconnect.ForceReconnect();
@@ -82,50 +83,20 @@ namespace RedisCacheProvider
         /// <typeparam name="T">The cache value type.</typeparam>
         /// <param name="key">The cache key.</param>
         /// <param name="value">The cache value.</param>
+        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
         /// True if it succeeds, false if it fails.
         /// </returns>
         /// <seealso cref="ICache.SetValueAsync{T}(string,T,CancellationToken)"/>
-        public async Task<bool> SetValueAsync<T>(string key, T value, CancellationToken cancellationToken = default)
+        public async Task<bool> SetValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
         {
             try
             {
                 return await _policy.ExecuteAsync(async (ct) =>
                            {
                                var serializedValue = JsonConvert.SerializeObject(value);
-                               return await GetDatabase().StringSetAsync(key, serializedValue);
-                           },
-                           cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Sets cache value asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The cache value type.</typeparam>
-        /// <param name="key">The cache key.</param>
-        /// <param name="value">The cache value.</param>
-        /// <param name="absoluteExpiration">The absolute time when the cache entry expires.</param>
-        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
-        /// <returns>
-        /// True if it succeeds, false if it fails.
-        /// </returns>
-        /// <seealso cref="ICache.SetValueAsync{T}(string,T,DateTimeOffset,CancellationToken)"/>
-        public async Task<bool> SetValueAsync<T>(string key, T value, DateTimeOffset absoluteExpiration, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                           {
-                               var serializedValue = JsonConvert.SerializeObject(value);
-                               TimeSpan? expiration = absoluteExpiration - DateTimeOffset.Now;
-                               return await GetDatabase().StringSetAsync(key, serializedValue, expiration);
+                               return await GetDatabase().StringSetAsync(key, serializedValue, null, onlyIfNew ? When.NotExists : When.Always);
                            },
                            cancellationToken);
             }
@@ -143,19 +114,55 @@ namespace RedisCacheProvider
         /// <param name="key">The cache key.</param>
         /// <param name="value">The cache value.</param>
         /// <param name="relativeExpiration">The relative time when the cache entry expires.</param>
+        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
         /// True if it succeeds, false if it fails.
         /// </returns>
         /// <seealso cref="ICache.SetValueAsync{T}(string,T,TimeSpan,CancellationToken)"/>
-        public async Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, CancellationToken cancellationToken = default)
+        public async Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
         {
             try
             {
                 return await _policy.ExecuteAsync(async (ct) =>
                            {
                                var serializedValue = JsonConvert.SerializeObject(value);
-                               return await GetDatabase().StringSetAsync(key, serializedValue, relativeExpiration);
+                               return await GetDatabase().StringSetAsync(key, serializedValue, relativeExpiration, onlyIfNew ? When.NotExists : When.Always);
+                           },
+                           cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                           {
+                               return await GetDatabase().KeyDeleteAsync(key);
+                           },
+                           cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteAsync(string key, string valueAsString, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                           {
+                               var result = await GetDatabase().ScriptEvaluateAsync(LuaResource.Delete, new { key = (RedisKey)key, value = $"\"{valueAsString}\"" });
+                               return (int)result == 1;
                            },
                            cancellationToken);
             }

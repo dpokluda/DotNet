@@ -23,7 +23,7 @@ public class RedisCacheTest
     {
         ICache cache = GetRedisCache();
         var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, "value", CancellationToken.None);
+        await cache.SetValueAsync(key, "value", false, CancellationToken.None);
         Assert.AreEqual("value", await cache.GetValueAsync<string>(key));
     }
 
@@ -32,25 +32,35 @@ public class RedisCacheTest
     {
         ICache cache = GetRedisCache();
         var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, 123, CancellationToken.None);
+        await cache.SetValueAsync(key, 123, false, CancellationToken.None);
         Assert.AreEqual(123, await cache.GetValueAsync<int>(key));
     }
 
     [TestMethod]
-    public async Task SetWithAbsoluteExpirationAndGet()
+    public async Task SetIfNew()
     {
         ICache cache = GetRedisCache();
         var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, "value", DateTimeOffset.UtcNow + TimeSpan.FromMinutes(1), CancellationToken.None);
+        Assert.IsTrue(await cache.SetValueAsync(key, "value", true, CancellationToken.None));
         Assert.AreEqual("value", await cache.GetValueAsync<string>(key));
     }
-
+    
+    [TestMethod]
+    public async Task SetIfNewFail()
+    {
+        ICache cache = GetRedisCache();
+        var key = GenerateCacheKey();
+        Assert.IsTrue(await cache.SetValueAsync(key, "value", true, CancellationToken.None));
+        Assert.IsFalse(await cache.SetValueAsync(key, "value2", true, CancellationToken.None));
+        Assert.AreEqual("value", await cache.GetValueAsync<string>(key));
+    }
+    
     [TestMethod]
     public async Task SetWithRelativeExpirationAndGet()
     {
         ICache cache = GetRedisCache();
         var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, "value", TimeSpan.FromMinutes(1), CancellationToken.None);
+        await cache.SetValueAsync(key, "value", TimeSpan.FromMinutes(1), false, CancellationToken.None);
         Assert.AreEqual("value", await cache.GetValueAsync<string>(key));
     }
 
@@ -64,21 +74,11 @@ public class RedisCacheTest
 
 
     [TestMethod]
-    public async Task SetWithAbsoluteExpirationAndGetExpired()
-    {
-        ICache cache = GetRedisCache();
-        var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, "value", DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(100), CancellationToken.None);
-        await Task.Delay(500);
-        Assert.IsNull(await cache.GetValueAsync<string>(key));
-    }
-
-    [TestMethod]
     public async Task SetWithRelativeExpirationAndGetExpired()
     {
         ICache cache = GetRedisCache();
         var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, "value", TimeSpan.FromMilliseconds(100), CancellationToken.None);
+        await cache.SetValueAsync(key, "value", TimeSpan.FromMilliseconds(100), false, CancellationToken.None);
         await Task.Delay(500);
         Assert.IsNull(await cache.GetValueAsync<string>(key));
     }
@@ -88,10 +88,37 @@ public class RedisCacheTest
     {
         ICache cache = GetRedisCache();
         var key = GenerateCacheKey();
-        await cache.SetValueAsync(key, "value", CancellationToken.None);
+        await cache.SetValueAsync(key, "value", false, CancellationToken.None);
         await Assert.ThrowsExceptionAsync<JsonReaderException>(async () => await cache.GetValueAsync<int>(key));
     }
-
+    
+    [TestMethod]
+    public async Task Delete()
+    {
+        ICache cache = GetRedisCache();
+        var key = GenerateCacheKey();
+        Assert.IsTrue(await cache.SetValueAsync(key, "value", false, CancellationToken.None));
+        Assert.IsTrue(await cache.DeleteAsync(key));
+    }
+    
+    [TestMethod]
+    public async Task DeleteWithValue()
+    {
+        ICache cache = GetRedisCache();
+        var key = GenerateCacheKey();
+        Assert.IsTrue(await cache.SetValueAsync(key, "value", false, CancellationToken.None));
+        Assert.IsTrue(await cache.DeleteAsync(key, "value"));
+    }
+    
+    [TestMethod]
+    public async Task DeleteWithValueFail()
+    {
+        ICache cache = GetRedisCache();
+        var key = GenerateCacheKey();
+        Assert.IsTrue(await cache.SetValueAsync(key, "value", false, CancellationToken.None));
+        Assert.IsFalse(await cache.DeleteAsync(key, "value2"));
+    }
+    
     private static RedisCache GetRedisCache()
     {
         return new RedisCache(

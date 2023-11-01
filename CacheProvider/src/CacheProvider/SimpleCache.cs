@@ -30,20 +30,39 @@
             throw new KeyNotFoundException("Cache entry with the specified key is not found.");
         }
 
-        public Task<bool> SetValueAsync<T>(string key, T value, CancellationToken cancellationToken = default)
+        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
+            Cache.Remove(key);
+            return Task.FromResult(true);
+        }
+
+        public async Task<bool> DeleteAsync(string key, string valueAsString, CancellationToken cancellationToken = default)
+        {
+            if (await GetValueAsync<string>(key, cancellationToken) == valueAsString)
+            {
+                Cache.Remove(key);
+                return true;
+            }
+
+            return false;
+        }
+
+        public Task<bool> SetValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
+        {
+            if (onlyIfNew && Cache.ContainsKey(key))
+            {
+                return Task.FromResult(false);
+            }
             Cache[key] = new SimpleCacheEntry { Value = value };
             return Task.FromResult(true);
         }
 
-        public Task<bool> SetValueAsync<T>(string key, T value, DateTimeOffset absoluteExpiration, CancellationToken cancellationToken = default)
+        public Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
         {
-            Cache[key] = new SimpleCacheEntry { Value = value, Expiration = absoluteExpiration };
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, CancellationToken cancellationToken = default)
-        {
+            if (onlyIfNew && Cache.ContainsKey(key))
+            {
+                return Task.FromResult(false);
+            }
             Cache[key] = new SimpleCacheEntry { Value = value, Expiration = DateTimeOffset.UtcNow + relativeExpiration };
             return Task.FromResult(true);
         }

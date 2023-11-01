@@ -1,11 +1,4 @@
-﻿// -------------------------------------------------------------------------
-//  <copyright file="RedisConfiguration.cs" company="Microsoft">
-//      Copyright (c) Microsoft Corporation. All rights reserved.
-//  </copyright>
-// -------------------------------------------------------------------------
-// 
-
-namespace CacheProvider.Configuration;
+﻿namespace CacheProvider.Configuration;
 
 public class RedisConfiguration
 {
