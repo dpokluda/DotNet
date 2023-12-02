@@ -1,0 +1,20 @@
+@SampleApi_HostAddress = https://localhost:7131
+
+GET {{SampleApi_HostAddress}}/names
+Accept: application/json
+
+###
+
+GET {{SampleApi_HostAddress}}/names/david
+Accept: application/json
+
+###
+
+POST {{SampleApi_HostAddress}}/names
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "david"
+}
+###
