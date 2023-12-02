@@ -5,9 +5,12 @@ namespace SampleCommon;
 
 public class AzureData
 {
+    private const string serviceBusConnectionString = "";
+    private const string cosmosDbConnectionString = ""
+    
     public Task<ServiceBusSender> GetServiceBusSenderAsync(CancellationToken token)
     {
-        var client = new ServiceBusClient("Endpoint=sb://dpokluda-test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ErWsmKIsr2A3Ma/PDZKLBepjebibtkSIw+ASbI42hfk=");
+        ServiceBusClient client = GetServiceBusClient();
         ServiceBusSender sender = client.CreateSender("names");
 
         return Task.FromResult(sender);
@@ -23,7 +26,7 @@ public class AzureData
 
     public Task<Container> GetDataContainer(CancellationToken token)
     {
-        var cosmosClient = new CosmosClient("AccountEndpoint=https://dpokluda-test.documents.azure.com:443/;AccountKey=GXdkrb0IFzYLNtTTagSMKuzsUAdl6x3nubfoJ5dY4o7ELyM8NUXFlAtgA2dNpaB4LKgDgpu5P0fPACDb9cmaYQ==;");
+        var cosmosClient = new CosmosClient(cosmosDbConnectionString);
         var database = cosmosClient.GetDatabase("AzureSample");
         var container = database.GetContainer("Names");
 
@@ -32,7 +35,7 @@ public class AzureData
 
     private ServiceBusClient GetServiceBusClient()
     {
-        var client = new ServiceBusClient("Endpoint=sb://dpokluda-test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ErWsmKIsr2A3Ma/PDZKLBepjebibtkSIw+ASbI42hfk=");
+        var client = new ServiceBusClient(serviceBusConnectionString);
         return client;
     }
 }
