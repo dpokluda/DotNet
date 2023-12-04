@@ -14,17 +14,24 @@ namespace SimpleConsole
             var rootCommand = new RootCommand(@"Simple console application demonstrating how to:
 - configure dependency injection
 - configure console logging
+- configure application settings with custom configuration class
 - configure program argument parsing");
             var debugOption = new Option<bool>("--debug", "Optional boolean flag to write debug output") { IsRequired = false };
             rootCommand.AddOption(debugOption);
             rootCommand.SetHandler(async (debug) =>
                 {
+                    // configure application settings
+                    var configuration = new ConfigurationBuilder()
+                                            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                                            .Build();
+                    // configure logging and dependency injection
                     var services = new ServiceCollection()
                                    .AddLogging(configure =>
                                    {
                                        configure.SetMinimumLevel(debug ? LogLevel.Debug : LogLevel.Information);
                                        configure.AddConsole();
                                    })
+                                   .Configure<MyConfig>(configuration.GetSection(MyConfig.SectionName))
                                    .AddSingleton<ITest, MyTest>()
                                    .BuildServiceProvider();
                     // arguments
@@ -62,11 +69,13 @@ namespace SimpleConsole
 
         private class MyTest : ITest
         {
-            private const string SimpleName = "David Pokluda";
+            private const string SimpleName = "Default";
+            private readonly MyConfig _myConfig;
             private readonly ILogger<MyTest> _logger;
 
-            public MyTest(ILogger<MyTest> logger)
+            public MyTest(IOptions<MyConfig> myConfig, ILogger<MyTest> logger)
             {
+                _myConfig = myConfig.Value;
                 _logger = logger;
             }
 
@@ -74,8 +83,9 @@ namespace SimpleConsole
             {
                 get
                 {
-                    _logger.LogDebug($"MyTest.Name: {SimpleName}");
-                    return SimpleName;
+                    var name = _myConfig.Name ?? SimpleName;
+                    _logger.LogDebug($"MyTest.Name: {name}");
+                    return name;
                 }
             }
         }
