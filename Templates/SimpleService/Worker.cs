@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Options;
+using SimpleService.Configuration;
+
 namespace SimpleService
 {
     public class Worker : BackgroundService
@@ -33,11 +36,13 @@ namespace SimpleService
 
     public class MyTest : ITest
     {
-        private const string SimpleName = "David Pokluda";
+        private const string SimpleName = "Default";
+        private readonly MyConfig _myConfig;
         private readonly ILogger<MyTest> _logger;
 
-        public MyTest(ILogger<MyTest> logger)
+        public MyTest(IOptions<MyConfig> myConfig, ILogger<MyTest> logger)
         {
+            _myConfig = myConfig.Value;
             _logger = logger;
         }
 
@@ -45,8 +50,9 @@ namespace SimpleService
         {
             get
             {
-                _logger.LogDebug($"MyTest.Name: {SimpleName}");
-                return SimpleName;
+                var name = _myConfig.Name ?? SimpleName;
+                _logger.LogDebug($"MyTest.Name: {name}");
+                return name;
             }
         }
     }

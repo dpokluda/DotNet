@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SimpleConsole.Configuration;
 
 namespace SimpleConsole
 {
@@ -11,7 +14,8 @@ namespace SimpleConsole
         /// <summary>
         /// Simple console application demonstrating how to:
         /// - configure dependency injection  
-        /// - configure console logging  
+        /// - configure console logging    
+        /// - configure application settings with custom configuration class
         /// - configure program argument parsing
         /// </summary>
         /// <param name="debug">Optional boolean flag to write debug output</param>
@@ -20,6 +24,11 @@ namespace SimpleConsole
         /// </returns>
         static async Task<int> Main(bool debug)
         {
+            // configure application settings
+            var configuration = new ConfigurationBuilder()
+                                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                                    .Build();
+
             // configure logging and dependency injection
             var services = new ServiceCollection()
                            .AddLogging(configure =>
@@ -27,8 +36,10 @@ namespace SimpleConsole
                                configure.SetMinimumLevel(debug ? LogLevel.Debug : LogLevel.Information);
                                configure.AddConsole();
                            })
+                           .Configure<MyConfig>(configuration.GetSection(MyConfig.SectionName))
                            .AddSingleton<ITest, MyTest>()
                            .BuildServiceProvider();
+
             // arguments
             Console.WriteLine("Program arguments: ");
             Console.Write("Debug: ");
@@ -61,11 +72,13 @@ namespace SimpleConsole
 
         private class MyTest : ITest
         {
-            private const string SimpleName = "David Pokluda";
+            private const string SimpleName = "Default";
+            private readonly MyConfig _myConfig;
             private readonly ILogger<MyTest> _logger;
 
-            public MyTest(ILogger<MyTest> logger)
+            public MyTest(IOptions<MyConfig> myConfig, ILogger<MyTest> logger)
             {
+                _myConfig = myConfig.Value;
                 _logger = logger;
             }
 
@@ -73,8 +86,9 @@ namespace SimpleConsole
             {
                 get
                 {
-                    _logger.LogDebug($"MyTest.Name: {SimpleName}");
-                    return SimpleName;
+                    var name = _myConfig.Name ?? SimpleName;
+                    _logger.LogDebug($"MyTest.Name: {name}");
+                    return name;
                 }
             }
         }

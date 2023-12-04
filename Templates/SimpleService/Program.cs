@@ -1,3 +1,5 @@
+using SimpleService.Configuration;
+
 namespace SimpleService
 {
     public class Program
@@ -23,6 +25,9 @@ namespace SimpleService
                         configure.SetMinimumLevel(debug ? LogLevel.Debug : LogLevel.Information);
                         configure.AddConsole();
                     });
+                    // register MyConfig configuration section
+                    services.AddOptions<MyConfig>()
+                            .BindConfiguration(MyConfig.SectionName);
                     services.AddSingleton<ITest, MyTest>();
                     services.AddSingleton<IProgramArguments>(new ProgramArguments()
                     {
