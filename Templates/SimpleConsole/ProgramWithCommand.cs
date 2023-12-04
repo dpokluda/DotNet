@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.CommandLine;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using SimpleConsole.Configuration;
 
 namespace SimpleConsole
 {
