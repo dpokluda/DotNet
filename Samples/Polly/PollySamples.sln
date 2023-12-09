@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Retry", "Retry\Retry.csproj", "{7F7E73EC-E2F5-41A8-8494-5450C0AB8F3F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CircuitBreaker", "CircuitBreaker\CircuitBreaker.csproj", "{14891C71-775B-4621-BD93-AA79A909D59A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F7E73EC-E2F5-41A8-8494-5450C0AB8F3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F7E73EC-E2F5-41A8-8494-5450C0AB8F3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F7E73EC-E2F5-41A8-8494-5450C0AB8F3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F7E73EC-E2F5-41A8-8494-5450C0AB8F3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14891C71-775B-4621-BD93-AA79A909D59A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14891C71-775B-4621-BD93-AA79A909D59A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14891C71-775B-4621-BD93-AA79A909D59A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14891C71-775B-4621-BD93-AA79A909D59A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
