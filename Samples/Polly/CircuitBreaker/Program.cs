@@ -1,4 +1,5 @@
 ﻿using Polly;
+using Polly.CircuitBreaker;
 using SimpleConsole.Exception;
 
 namespace SimpleConsole
@@ -7,14 +8,14 @@ namespace SimpleConsole
     {
         private static int Counter = 0;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             // Define the CircuitBreaker policy
             var circuitBreakerPolicy = Policy
                 .Handle<System.Exception>()
                 .CircuitBreaker(
                     exceptionsAllowedBeforeBreaking: 2,
-                    durationOfBreak: TimeSpan.FromSeconds(30),
+                    durationOfBreak: TimeSpan.FromSeconds(10),
                     onBreak: (ex, breakDelay) =>
                     {
                         Console.WriteLine($"Circuit broken! Exception: {ex.Message}. Breaking for {breakDelay.TotalSeconds} seconds.");
@@ -24,21 +25,34 @@ namespace SimpleConsole
                 );
 
             // Simulate calls with the CircuitBreaker policy
-            for (int i = 0; i < 5; i++)
+            while (true)
             {
-                try
+                for (int i = 0; i < 5; i++)
                 {
-                    circuitBreakerPolicy.Execute(() =>
+                    try
                     {
-                        Console.WriteLine("Attempting action...");
-                        PerformOperation(i);
-                    });
+                        circuitBreakerPolicy.Execute(() =>
+                        {
+                            Console.WriteLine("Attempting action...");
+                            PerformOperation(i);
+                        });
+                    }
+                    catch (MyException ex)
+                    {
+                        Console.WriteLine($"Action failed with exception: {ex.Message}");
+                    }
+                    catch (BrokenCircuitException ex)
+                    {
+                        Console.WriteLine($"Circuit breaker exception: {ex.Message}");
+                    }
                 }
-                catch (MyException ex)
-                {
-                    Console.WriteLine($"Action failed with exception: {ex.Message}");
-                }
+                
+                Console.Write("Waiting...");
+                await Task.Delay(5000);
+                Console.WriteLine();
             }
+            
+            
         }
 
         static void PerformOperation(int iteration)
