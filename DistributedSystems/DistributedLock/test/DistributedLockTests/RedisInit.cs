@@ -10,7 +10,10 @@ namespace DistributedLockTests
         [AssemblyInitialize]
         public static void StartRedis(TestContext testContext)
         {
+            // Windows (local redis server)
             _redis = Process.Start("redis\\redis-server.exe");
+            // MacOs (you need to install redis first: brew install redis)
+            // _redis = Process.Start("/opt/homebrew/opt/redis/bin/redis-server","/opt/homebrew/etc/redis.conf");
         }
 
         [AssemblyCleanup]
