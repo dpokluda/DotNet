@@ -155,14 +155,25 @@ namespace RedisCacheProvider
             }
         }
 
-        public async Task<bool> DeleteAsync(string key, string valueAsString, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
             try
             {
                 return await _policy.ExecuteAsync(async (ct) =>
                            {
-                               var result = await GetDatabase().ScriptEvaluateAsync(LuaResource.Delete, new { key = (RedisKey)key, value = $"\"{valueAsString}\"" });
-                               return (int)result == 1;
+
+                               if (typeof(T) == typeof(string))
+                               {
+                                   var result = await GetDatabase().ScriptEvaluateAsync(
+                                       LuaResource.Delete, new { key = (RedisKey)key, value = $"\"{value.ToString()}\"" });
+                                   return (int)result == 1;
+                               }
+                               else
+                               {
+                                   var result = await GetDatabase().ScriptEvaluateAsync(
+                                       LuaResource.Delete, new { key = (RedisKey)key, value });
+                                   return (int)result == 1;
+                               }
                            },
                            cancellationToken);
             }

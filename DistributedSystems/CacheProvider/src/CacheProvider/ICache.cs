@@ -59,11 +59,11 @@
         /// </summary>
         /// <typeparam name="T">The cache value type.</typeparam>
         /// <param name="key">The cache key.</param>
-        /// <param name="valueAsString">The cache value as string.</param>
+        /// <param name="value">The cache value (if the cached value is different, then don't delete).</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
         /// True if it succeeds, false if it fails.
         /// </returns>
-        Task<bool> DeleteAsync(string key, string valueAsString, CancellationToken cancellationToken = default);
+        Task<bool> DeleteAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>;
     }
 }

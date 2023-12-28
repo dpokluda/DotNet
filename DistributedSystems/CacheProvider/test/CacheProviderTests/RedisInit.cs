@@ -10,10 +10,20 @@ public class RedisInit
     [AssemblyInitialize]
     public static void StartRedis(TestContext testContext)
     {
-        // Windows (local redis server)
-        _redis = Process.Start("redis\\redis-server.exe");
-        // MacOs (you need to install redis first: brew install redis)
-        // _redis = Process.Start("/opt/homebrew/opt/redis/bin/redis-server","/opt/homebrew/etc/redis.conf");
+        if (OperatingSystem.IsWindows())
+        {
+            // Windows (local redis server)
+            // _redis = Process.Start("redis\\redis-server.exe");
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            // MacOs (you need to install redis first: brew install redis)
+            _redis = Process.Start("/opt/homebrew/opt/redis/bin/redis-server","/opt/homebrew/etc/redis.conf");
+        }
+        else
+        {
+            throw new PlatformNotSupportedException();
+        }
     }
 
     [AssemblyCleanup]

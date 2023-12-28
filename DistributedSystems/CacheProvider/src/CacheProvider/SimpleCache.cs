@@ -36,9 +36,9 @@
             return Task.FromResult(true);
         }
 
-        public async Task<bool> DeleteAsync(string key, string valueAsString, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
-            if (await GetValueAsync<string>(key, cancellationToken) == valueAsString)
+            if (value.Equals(await GetValueAsync<T>(key, cancellationToken)))
             {
                 Cache.Remove(key);
                 return true;
