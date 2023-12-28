@@ -1,13 +1,16 @@
 ﻿namespace DistributedLock;
 
 /// <summary>
-/// Acts as a factory for <see cref="IDistributedLock"/> instances of a certain type. This interface may be
-/// easier to use than <see cref="IDistributedLock"/> in dependency injection scenarios.
+/// Acts as a factory for acquiring a distributed lock.
 /// </summary>
 public interface IDistributedLockProvider
 {
     /// <summary>
-    /// Constructs an <see cref="IDistributedLock"/> instance with the given <paramref name="name"/>.
+    /// Acquires the lock asynchronously, failing with <see cref="TimeoutException"/> if the attempt times out. 
     /// </summary>
-    IDistributedLock CreateLock(string name);
+    /// <param name="name">Identifier of the distributed lock to acquire.</param>
+    /// <param name="timeout">How long to wait before giving up on the acquisition attempt. Defaults to <see cref="Timeout.InfiniteTimeSpan"/></param>
+    /// <param name="cancellationToken">Specifies a token by which the wait can be canceled</param>
+    /// <returns>An <see cref="IDistributedLockHandle"/> which can be used to release the lock</returns>
+    Task<IDistributedLockHandle> AcquireAsync(string name, TimeSpan timeout, CancellationToken cancellationToken = default);
 }

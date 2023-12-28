@@ -1,22 +1,33 @@
 ﻿using CacheProvider;
 using Microsoft.Extensions.Logging;
-using RedisCacheProvider;
 
 namespace DistributedLock.Redis;
 
 public class RedisDistributedLockProvider : IDistributedLockProvider
 {
-    private readonly ICache _cache;
-    private readonly ILogger<RedisCache> _logger;
+    private const string TimeoutExceptionMessage = "Timeout waiting for distributed lock";
+    private const string LockPrefix = "lock:";
+    
+    private readonly ICacheProvider _cacheProvider;
+    private readonly ILogger<RedisDistributedLockProvider> _logger;
 
-    public RedisDistributedLockProvider(ICache cache, ILogger<RedisCache> logger)
+    public RedisDistributedLockProvider(ICacheProvider cacheProvider, ILogger<RedisDistributedLockProvider> logger)
     {
-        _cache = cache;
+        _cacheProvider = cacheProvider;
         _logger = logger;
     }
 
-    public IDistributedLock CreateLock(string name)
+    public async Task<IDistributedLockHandle> AcquireAsync(string name, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        return new RedisDistributedLock(name, _cache, _logger);
+        var _cache = _cacheProvider.GetCache();
+        var lockName = LockPrefix + name;
+        var lockValue = Guid.NewGuid().ToString("N");
+        if (await _cache.SetValueAsync(lockName, lockValue, onlyIfNew: true,
+                        cancellationToken: cancellationToken))
+        {
+            return new RedisDistributedLockHandle(_cache, lockName, lockValue);
+        }
+        
+        throw new TimeoutException(TimeoutExceptionMessage);
     }
 }
