@@ -1,6 +1,5 @@
-using CacheProvider;
 using CacheProvider.Configuration;
-using DistributedLock;
+using DistributedLock.Exceptions;
 using DistributedLock.Redis;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -19,7 +18,7 @@ public class DistributedLockTests
     {
         var provider = new RedisDistributedLockProvider(GetCacheProvider(), new NullLogger<RedisDistributedLockProvider>());
         var name = Guid.NewGuid().ToString("N");
-        var lockHandle = await provider.AcquireAsync(name, TimeSpan.FromSeconds(10), CancellationToken.None);
+        var lockHandle = await provider.AcquireAsync(name, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
         await lockHandle.ReleaseAsync();
     }
@@ -32,20 +31,20 @@ public class DistributedLockTests
         var lockProvider = new RedisDistributedLockProvider(cacheProvider, new NullLogger<RedisDistributedLockProvider>());
         
         // acquire new lock - should succeed
-        var lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromSeconds(10), CancellationToken.None);
+        var lockHandle = await lockProvider.AcquireAsync(name, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
 
         // acquire an already acquired lock - should fail
-        Assert.ThrowsExceptionAsync<TimeoutException>(async () =>
+        Assert.ThrowsExceptionAsync<DistributedResourceException>(async () =>
         {
-            await lockProvider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), CancellationToken.None);
+            await lockProvider.AcquireAsync(name, CancellationToken.None);
         });
         
         // release the acquired lock
         await lockHandle.ReleaseAsync();
         
         // now we should be able to re-acquire the same lock
-        lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromSeconds(10), CancellationToken.None);
+        lockHandle = await lockProvider.AcquireAsync(name, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
         
         // final release
@@ -61,7 +60,7 @@ public class DistributedLockTests
         var lockProvider = new RedisDistributedLockProvider(cacheProvider, new NullLogger<RedisDistributedLockProvider>());
 
         // acquire lock
-        var lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromSeconds(10), CancellationToken.None);
+        var lockHandle = await lockProvider.AcquireAsync(name, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
 
         // test existence of lock cache entry
@@ -83,7 +82,7 @@ public class DistributedLockTests
         var lockProvider = new RedisDistributedLockProvider(cacheProvider, new NullLogger<RedisDistributedLockProvider>());
 
         // acquire lock
-        var lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromSeconds(10), CancellationToken.None);
+        var lockHandle = await lockProvider.AcquireAsync(name, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
 
         // test existence of lock cache entry
@@ -105,7 +104,7 @@ public class DistributedLockTests
         var lockProvider = new RedisDistributedLockProvider(cacheProvider, new NullLogger<RedisDistributedLockProvider>());
 
         // acquire lock
-        var lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromSeconds(10), CancellationToken.None);
+        var lockHandle = await lockProvider.AcquireAsync(name, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
 
         // test existence of lock cache entry

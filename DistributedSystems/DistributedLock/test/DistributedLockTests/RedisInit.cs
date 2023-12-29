@@ -13,7 +13,7 @@ namespace DistributedLockTests
             if (OperatingSystem.IsWindows())
             {
                 // Windows (local redis server)
-                // _redis = Process.Start("redis\\redis-server.exe");
+                _redis = Process.Start("redis\\redis-server.exe");
             }
             else if (OperatingSystem.IsMacOS())
             {

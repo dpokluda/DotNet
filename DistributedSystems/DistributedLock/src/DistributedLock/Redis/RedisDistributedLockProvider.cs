@@ -1,11 +1,12 @@
 ﻿using CacheProvider;
+using DistributedLock.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace DistributedLock.Redis;
 
 public class RedisDistributedLockProvider : IDistributedLockProvider
 {
-    private const string TimeoutExceptionMessage = "Timeout waiting for distributed lock";
+    private const string UnableToAcquireExceptionMessage = "Unable to acquire distributed lock";
     private const string LockPrefix = "lock:";
     
     private readonly ICacheProvider _cacheProvider;
@@ -17,7 +18,7 @@ public class RedisDistributedLockProvider : IDistributedLockProvider
         _logger = logger;
     }
 
-    public async Task<IDistributedLockHandle> AcquireAsync(string name, TimeSpan timeout, CancellationToken cancellationToken = default)
+    public async Task<IDistributedLockHandle> AcquireAsync(string name, CancellationToken cancellationToken = default)
     {
         var _cache = _cacheProvider.GetCache();
         var lockName = LockPrefix + name;
@@ -28,6 +29,6 @@ public class RedisDistributedLockProvider : IDistributedLockProvider
             return new RedisDistributedLockHandle(_cache, lockName, lockValue);
         }
         
-        throw new TimeoutException(TimeoutExceptionMessage);
+        throw new DistributedResourceException(UnableToAcquireExceptionMessage);
     }
 }
