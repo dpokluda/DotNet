@@ -10,7 +10,7 @@ namespace DistributedLockTests;
 public class DistributedSemaphoreTests
 {
     private const string LocalRedisConfiguration = "127.0.0.1:6379";
-    private const string LockPrefix = "lock:";
+    private const string SemaphorePrefix = "semaphore:";
     
     [TestMethod]
     public async Task SimpleAcquireAndDispose()

@@ -138,6 +138,63 @@ namespace RedisCacheProvider
             }
         }
 
+        public async Task<int> IncrementValueAsync(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.Increment, new { key = (RedisKey)key, maxValue = Int32.MaxValue });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<int> IncrementValueAsync(string key, int maxValue, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.Increment, new { key = (RedisKey)key, maxValue = maxValue });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<int> DecrementValueAsync(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.Decrement, new { key = (RedisKey)key });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
             try

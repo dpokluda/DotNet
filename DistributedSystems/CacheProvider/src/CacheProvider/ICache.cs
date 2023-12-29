@@ -44,6 +44,37 @@
         Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, bool onlyIfNew = false, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Increments cache value by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache value.
+        /// </returns>
+        Task<int> IncrementValueAsync(string key, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Increments cache value by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="maxValue">The maximum counter value.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache value.
+        /// </returns>
+        Task<int> IncrementValueAsync(string key, int maxValue, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Decrements cache value by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache value.
+        /// </returns>
+        Task<int> DecrementValueAsync(string key, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Deletes cache entry asynchronously.
         /// </summary>
         /// <typeparam name="T">The cache value type.</typeparam>

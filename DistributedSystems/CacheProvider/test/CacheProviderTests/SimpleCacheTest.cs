@@ -100,4 +100,29 @@ public class SimpleCacheTest
         Assert.IsTrue(await cache.SetValueAsync("key", "value", false, CancellationToken.None));
         Assert.IsFalse(await cache.DeleteAsync("key", "value2"));
     }
+    
+    [TestMethod]
+    public async Task IncrementAndDecrementValue()
+    {
+        ICache cache = new SimpleCache();
+        Assert.AreEqual(0, await cache.DecrementValueAsync("key"));
+        Assert.AreEqual(1, await cache.IncrementValueAsync("key"));
+        Assert.AreEqual(2, await cache.IncrementValueAsync("key"));
+        Assert.AreEqual(1, await cache.DecrementValueAsync("key"));
+        Assert.AreEqual(0, await cache.DecrementValueAsync("key"));
+        Assert.AreEqual(0, await cache.DecrementValueAsync("key"));
+    }
+    
+    [TestMethod]
+    public async Task IncrementWithMaxValueAndDecrementValue()
+    {
+        ICache cache = new SimpleCache();
+        Assert.AreEqual(0, await cache.DecrementValueAsync("key"));
+        Assert.AreEqual(1, await cache.IncrementValueAsync("key", 2));
+        Assert.AreEqual(2, await cache.IncrementValueAsync("key", 2));
+        Assert.AreEqual(2, await cache.IncrementValueAsync("key", 2));
+        Assert.AreEqual(1, await cache.DecrementValueAsync("key"));
+        Assert.AreEqual(0, await cache.DecrementValueAsync("key"));
+        Assert.AreEqual(0, await cache.DecrementValueAsync("key"));
+    }
 }

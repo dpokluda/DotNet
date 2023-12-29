@@ -66,5 +66,49 @@
             Cache[key] = new SimpleCacheEntry { Value = value, Expiration = DateTimeOffset.UtcNow + relativeExpiration };
             return Task.FromResult(true);
         }
+
+        public Task<int> DecrementValueAsync(string key, CancellationToken cancellationToken = default)
+        {
+            if (!Cache.ContainsKey(key))
+            {
+                return Task.FromResult(0);
+            }
+
+            var value = Math.Max(0, Convert.ToInt32(Cache[key].Value) - 1);
+            Cache[key] = new SimpleCacheEntry { Value = value };
+            return Task.FromResult(value);
+        }
+
+        public Task<int> IncrementValueAsync(string key, CancellationToken cancellationToken = default)
+        {
+            int value = 0;
+            if (!Cache.ContainsKey(key))
+            {
+                value = 1;
+            }
+            else
+            {
+                value = Convert.ToInt32(Cache[key].Value) + 1;
+            }
+
+            Cache[key] = new SimpleCacheEntry { Value = value };
+            return Task.FromResult(value);        
+        }
+        
+        public Task<int> IncrementValueAsync(string key, int maxValue, CancellationToken cancellationToken = default)
+        {
+            int value = 0;
+            if (!Cache.ContainsKey(key))
+            {
+                value = 1;
+            }
+            else
+            {
+                value = Math.Min(maxValue, Convert.ToInt32(Cache[key].Value) + 1);
+            }
+
+            Cache[key] = new SimpleCacheEntry { Value = value };
+            return Task.FromResult(value);        
+        }
     }
 }

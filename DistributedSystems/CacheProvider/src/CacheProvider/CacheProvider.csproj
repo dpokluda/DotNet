@@ -12,6 +12,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Lua\Delete.lua" />
+    <None Remove="Lua\Decrement.lua" />
+    <EmbeddedResource Include="Lua\Decrement.lua" />
+    <None Remove="Lua\Increment.lua" />
+    <EmbeddedResource Include="Lua\Increment.lua" />
   </ItemGroup>
 
   <ItemGroup>
