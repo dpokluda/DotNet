@@ -145,7 +145,7 @@ namespace RedisCacheProvider
                 return await _policy.ExecuteAsync(async (ct) =>
                     {
                         var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.Increment, new { key = (RedisKey)key, maxValue = Int32.MaxValue });
+                            LuaResource.SimpleIncrement, new { key = (RedisKey)key, maxValue = Int32.MaxValue });
                         return (int)result;
                     },
                     cancellationToken);
@@ -164,7 +164,7 @@ namespace RedisCacheProvider
                 return await _policy.ExecuteAsync(async (ct) =>
                     {
                         var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.Increment, new { key = (RedisKey)key, maxValue = maxValue });
+                            LuaResource.SimpleIncrement, new { key = (RedisKey)key, maxValue = maxValue });
                         return (int)result;
                     },
                     cancellationToken);
@@ -183,7 +183,7 @@ namespace RedisCacheProvider
                 return await _policy.ExecuteAsync(async (ct) =>
                     {
                         var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.Decrement, new { key = (RedisKey)key });
+                            LuaResource.SimpleDecrement, new { key = (RedisKey)key });
                         return (int)result;
                     },
                     cancellationToken);

@@ -47,22 +47,24 @@
         /// Increments cache value by one asynchronously.
         /// </summary>
         /// <param name="key">The cache key.</param>
+        /// <param name="expiration">The time period after which the semaphore will be automatically released.</param>
         /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
         /// <returns>
         /// The cache value.
         /// </returns>
-        Task<int> IncrementValueAsync(string key, CancellationToken cancellationToken = default);
+        Task<int> IncrementValueAsync(string key, TimeSpan expiration, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Increments cache value by one asynchronously.
         /// </summary>
         /// <param name="key">The cache key.</param>
         /// <param name="maxValue">The maximum counter value.</param>
+        /// <param name="expiration">The time period after which the semaphore will be automatically released.</param>
         /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
         /// <returns>
         /// The cache value.
         /// </returns>
-        Task<int> IncrementValueAsync(string key, int maxValue, CancellationToken cancellationToken = default);
+        Task<int> IncrementValueAsync(string key, int maxValue, TimeSpan expiration, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Decrements cache value by one asynchronously.

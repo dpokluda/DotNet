@@ -8,14 +8,18 @@
 
   <ItemGroup>
     <None Remove="Lua\Delete.lua" />
+    <None Remove="Lua\SimpleDecrement.lua" />
+    <None Remove="Lua\SimpleIncrement.lua" />
+    <None Remove="Lua\Decrement.lua" />
+    <None Remove="Lua\Increment.lua" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Lua\Delete.lua" />
-    <None Remove="Lua\Decrement.lua" />
-    <EmbeddedResource Include="Lua\Decrement.lua" />
-    <None Remove="Lua\Increment.lua" />
+    <EmbeddedResource Include="Lua\SimpleIncrement.lua" />
+    <EmbeddedResource Include="Lua\SimpleDecrement.lua" />
     <EmbeddedResource Include="Lua\Increment.lua" />
+    <EmbeddedResource Include="Lua\Decrement.lua" />
   </ItemGroup>
 
   <ItemGroup>

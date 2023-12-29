@@ -79,7 +79,7 @@
             return Task.FromResult(value);
         }
 
-        public Task<int> IncrementValueAsync(string key, CancellationToken cancellationToken = default)
+        public Task<int> IncrementValueAsync(string key, TimeSpan expiration, CancellationToken cancellationToken = default)
         {
             int value = 0;
             if (!Cache.ContainsKey(key))
@@ -91,11 +91,11 @@
                 value = Convert.ToInt32(Cache[key].Value) + 1;
             }
 
-            Cache[key] = new SimpleCacheEntry { Value = value };
+            Cache[key] = new SimpleCacheEntry { Value = value, Expiration = DateTimeOffset.UtcNow + expiration
             return Task.FromResult(value);        
         }
         
-        public Task<int> IncrementValueAsync(string key, int maxValue, CancellationToken cancellationToken = default)
+        public Task<int> IncrementValueAsync(string key, int maxValue, TimeSpan expiration, CancellationToken cancellationToken = default)
         {
             int value = 0;
             if (!Cache.ContainsKey(key))
@@ -107,7 +107,7 @@
                 value = Math.Min(maxValue, Convert.ToInt32(Cache[key].Value) + 1);
             }
 
-            Cache[key] = new SimpleCacheEntry { Value = value };
+            Cache[key] = new SimpleCacheEntry { Value = value, Expiration = DateTimeOffset.UtcNow + expiration };
             return Task.FromResult(value);        
         }
     }

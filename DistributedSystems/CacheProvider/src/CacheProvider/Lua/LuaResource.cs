@@ -9,19 +9,19 @@ namespace CacheProvider.Lua
     internal class LuaResource
     {
         public static Lazy<LuaScript> _delete = new Lazy<LuaScript>(() => LoadLuaScript("Delete"));
-        public static Lazy<LuaScript> _increment = new Lazy<LuaScript>(() => LoadLuaScript("Increment"));
-        public static Lazy<LuaScript> _decrement = new Lazy<LuaScript>(() => LoadLuaScript("Decrement"));
+        public static Lazy<LuaScript> _simpleIncrement = new Lazy<LuaScript>(() => LoadLuaScript("SimpleIncrement"));
+        public static Lazy<LuaScript> _simpleDecrement = new Lazy<LuaScript>(() => LoadLuaScript("SimpleDecrement"));
         public static LuaScript Delete
         {
             get { return _delete.Value; }
         }
-        public static LuaScript Increment
+        public static LuaScript SimpleIncrement
         {
-            get { return _increment.Value; }
+            get { return _simpleIncrement.Value; }
         }
-        public static LuaScript Decrement
+        public static LuaScript SimpleDecrement
         {
-            get { return _decrement.Value; }
+            get { return _simpleDecrement.Value; }
         }
 
         /// <summary>
