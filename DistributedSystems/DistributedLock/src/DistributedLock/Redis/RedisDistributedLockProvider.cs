@@ -26,7 +26,7 @@ public class RedisDistributedLockProvider : IDistributedLockProvider
         if (await _cache.SetValueAsync(lockName, lockValue, onlyIfNew: true,
                         cancellationToken: cancellationToken))
         {
-            return new RedisDistributedLockHandle(_cache, lockName, lockValue);
+            return new RedisDistributedLockHandle(lockName, lockValue, _cache, _logger);
         }
         
         throw new DistributedResourceException(UnableToAcquireExceptionMessage);

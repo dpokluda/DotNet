@@ -6,16 +6,17 @@ namespace DistributedLock.Redis;
 
 public class RedisDistributedLockHandle : IDistributedLockHandle
 {
-    private readonly ICache _cache;
     private readonly string _lockName;
     private readonly string _lockValue;
-    private readonly ILogger<RedisCache> _logger;
+    private readonly ICache _cache;
+    private readonly ILogger<RedisDistributedLockProvider> _logger;
 
-    public RedisDistributedLockHandle(ICache cache, string lockName, string lockValue)
+    public RedisDistributedLockHandle(string lockName, string lockValue, ICache cache, ILogger<RedisDistributedLockProvider> logger)
     {
-        _cache = cache;
         _lockName = lockName;
         _lockValue = lockValue;
+        _cache = cache;
+        _logger = logger;
     }
 
     public async Task ReleaseAsync(CancellationToken cancellationToken = default)

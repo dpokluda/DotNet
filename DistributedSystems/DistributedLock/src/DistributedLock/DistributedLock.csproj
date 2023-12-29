@@ -10,8 +10,4 @@
     <ProjectReference Include="..\..\..\CacheProvider\src\CacheProvider\CacheProvider.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Redis\" />
-  </ItemGroup>
-
 </Project>
