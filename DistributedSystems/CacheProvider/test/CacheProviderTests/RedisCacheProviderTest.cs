@@ -1,5 +1,6 @@
 ﻿using CacheProvider;
 using CacheProvider.Configuration;
+using CacheProvider.Timestamp;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using RedisCacheProvider;
@@ -19,6 +20,7 @@ public class RedisCacheProviderTest
             {
                 ConnectionString = LocalRedisConfiguration
             }), 
+            new ManualTimestampProvider(),
             new NullLogger<RedisCache>());
         Assert.IsNotNull(provider);
         

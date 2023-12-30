@@ -18,6 +18,7 @@ namespace RedisCacheProvider
     public class RedisCache : ICache
     {
         private ConnectionMultiplexer _redis;
+        private readonly ITimestampProvider _timestampProvider;
         private readonly AsyncRetryPolicy _policy;
         private readonly ILogger<RedisCache> _logger;
 
@@ -25,11 +26,13 @@ namespace RedisCacheProvider
         /// Initializes a new instance of the <see cref="RedisCache"/> class.
         /// </summary>
         /// <param name="config">The Redis configuration.</param>
+        /// <param name="timestampProvider">Factory class to generate current timestamp.</param>
         /// <param name="logger">The logger.</param>
-        public RedisCache(IOptions<RedisConfiguration> config, ILogger<RedisCache> logger)
+        public RedisCache( IOptions<RedisConfiguration> config, ITimestampProvider timestampProvider, ILogger<RedisCache> logger)
         {
             RedisLazyReconnect.InitializeConnectionString(config.Value.ConnectionString);
             _logger = logger;
+            _timestampProvider = timestampProvider;
             _redis = RedisLazyReconnect.Connection;
 
             _policy = Policy
@@ -138,64 +141,7 @@ namespace RedisCacheProvider
             }
         }
 
-        public async Task<int> IncrementValueAsync(string key, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.SimpleIncrement, new { key = (RedisKey)key, maxValue = Int32.MaxValue });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public async Task<int> IncrementValueAsync(string key, int maxValue, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.SimpleIncrement, new { key = (RedisKey)key, maxValue = maxValue });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public async Task<int> DecrementValueAsync(string key, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.SimpleDecrement, new { key = (RedisKey)key });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteValueAsync(string key, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -212,7 +158,7 @@ namespace RedisCacheProvider
             }
         }
 
-        public async Task<bool> DeleteAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
+        public async Task<bool> DeleteValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
             try
             {
@@ -222,17 +168,160 @@ namespace RedisCacheProvider
                                if (typeof(T) == typeof(string))
                                {
                                    var result = await GetDatabase().ScriptEvaluateAsync(
-                                       LuaResource.Delete, new { key = (RedisKey)key, value = $"\"{value.ToString()}\"" });
+                                       LuaResource.DeleteValue, 
+                                       new
+                                       {
+                                           key = (RedisKey)key, 
+                                           value = $"\"{value.ToString()}\""
+                                       });
                                    return (int)result == 1;
                                }
                                else
                                {
                                    var result = await GetDatabase().ScriptEvaluateAsync(
-                                       LuaResource.Delete, new { key = (RedisKey)key, value });
+                                       LuaResource.DeleteValue, 
+                                       new
+                                       {
+                                           key = (RedisKey)key, 
+                                           value
+                                       });
                                    return (int)result == 1;
                                }
                            },
                            cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<int> GetCounterAsync(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.GetCounter, 
+                            new
+                            {
+                                key = (RedisKey)key, 
+                                currentTime = _timestampProvider.Get()
+                            });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public Task<int> IncrementCounterAsync(string key, CancellationToken cancellationToken = default)
+        {
+            return IncrementCounterAsync(key, Int32.MaxValue, cancellationToken);
+        }
+
+        public async Task<int> IncrementCounterAsync(string key, int maxValue, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.IncrementCounter, 
+                            new
+                            {
+                                key = (RedisKey)key, 
+                                maxValue
+                            });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<int> DecrementCounterAsync(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.DecrementCounter, 
+                            new
+                            {
+                                key = (RedisKey)key
+                            });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+        
+        public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
+        {
+            return IncrementCounterAsync(key, id, expiration, Int32.MaxValue, cancellationToken);
+        }
+
+        public async Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.IncrementCounterWithExpiration, 
+                            new
+                            {
+                                key = (RedisKey)key,
+                                value = id,
+                                currentTime = _timestampProvider.Get(),
+                                expirationTime = expiration.TotalMilliseconds,
+                                maxValue = Int32.MaxValue
+                            });
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<int> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.DecrementCounterWithExpiration, 
+                            new
+                            {
+                                key = (RedisKey)key,
+                                value = id,
+                                currentTime = _timestampProvider.Get(),
+                            });
+                        return (int)result;
+                    },
+                    cancellationToken);
             }
             catch (Exception e)
             {

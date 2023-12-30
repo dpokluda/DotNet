@@ -8,20 +8,36 @@ namespace CacheProvider.Lua
     /// </summary>
     internal class LuaResource
     {
-        public static Lazy<LuaScript> _delete = new Lazy<LuaScript>(() => LoadLuaScript("Delete"));
-        public static Lazy<LuaScript> _simpleIncrement = new Lazy<LuaScript>(() => LoadLuaScript("SimpleIncrement"));
-        public static Lazy<LuaScript> _simpleDecrement = new Lazy<LuaScript>(() => LoadLuaScript("SimpleDecrement"));
-        public static LuaScript Delete
+        private static readonly Lazy<LuaScript> _deleteValue = new Lazy<LuaScript>(() => LoadLuaScript("DeleteValue"));
+        private static readonly Lazy<LuaScript> _incrementCounter = new Lazy<LuaScript>(() => LoadLuaScript("IncrementCounter"));
+        private static readonly Lazy<LuaScript> _decrementCounter = new Lazy<LuaScript>(() => LoadLuaScript("DecrementCounter"));
+        private static readonly Lazy<LuaScript> _incrementCounterWithExpiration = new Lazy<LuaScript>(() => LoadLuaScript("IncrementCounterWithExpiration"));
+        private static readonly Lazy<LuaScript> _decrementCounterWithExpiration = new Lazy<LuaScript>(() => LoadLuaScript("DecrementCounterWithExpiration"));
+        private static readonly Lazy<LuaScript> _getCounter = new Lazy<LuaScript>(() => LoadLuaScript("GetCounter"));
+        
+        public static LuaScript DeleteValue
         {
-            get { return _delete.Value; }
+            get { return _deleteValue.Value; }
         }
-        public static LuaScript SimpleIncrement
+        public static LuaScript IncrementCounter
         {
-            get { return _simpleIncrement.Value; }
+            get { return _incrementCounter.Value; }
         }
-        public static LuaScript SimpleDecrement
+        public static LuaScript DecrementCounter
         {
-            get { return _simpleDecrement.Value; }
+            get { return _decrementCounter.Value; }
+        }
+        public static LuaScript IncrementCounterWithExpiration
+        {
+            get { return _incrementCounterWithExpiration.Value; }
+        }
+        public static LuaScript DecrementCounterWithExpiration
+        {
+            get { return _decrementCounterWithExpiration.Value; }
+        }
+        public static LuaScript GetCounter
+        {
+            get { return _getCounter.Value; }
         }
 
         /// <summary>

@@ -7,19 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Lua\Delete.lua" />
-    <None Remove="Lua\SimpleDecrement.lua" />
-    <None Remove="Lua\SimpleIncrement.lua" />
-    <None Remove="Lua\Decrement.lua" />
-    <None Remove="Lua\Increment.lua" />
+    <None Remove="Lua\DecrementCounter.lua" />
+    <None Remove="Lua\DecrementCounterWithExpiration.lua" />
+    <None Remove="Lua\DeleteValue.lua" />
+    <None Remove="Lua\GetCounter.lua" />
+    <None Remove="Lua\GetCounterWithExpiration.lua" />
+    <None Remove="Lua\IncrementCounter.lua" />
+    <None Remove="Lua\IncrementCounterWithExpiration.lua" />
   </ItemGroup>
-
   <ItemGroup>
-    <EmbeddedResource Include="Lua\Delete.lua" />
-    <EmbeddedResource Include="Lua\SimpleIncrement.lua" />
-    <EmbeddedResource Include="Lua\SimpleDecrement.lua" />
-    <EmbeddedResource Include="Lua\Increment.lua" />
-    <EmbeddedResource Include="Lua\Decrement.lua" />
+    <EmbeddedResource Include="Lua\DecrementCounter.lua" />
+    <EmbeddedResource Include="Lua\DecrementCounterWithExpiration.lua" />
+    <EmbeddedResource Include="Lua\DeleteValue.lua" />
+    <EmbeddedResource Include="Lua\GetCounter.lua" />
+    <EmbeddedResource Include="Lua\IncrementCounter.lua" />
+    <EmbeddedResource Include="Lua\IncrementCounterWithExpiration.lua" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,5 +32,5 @@
     <PackageReference Include="Polly" Version="8.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
   </ItemGroup>
-
+  
 </Project>
