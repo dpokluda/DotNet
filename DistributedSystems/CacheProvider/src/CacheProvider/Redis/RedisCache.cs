@@ -56,7 +56,7 @@ namespace RedisCacheProvider
         /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
-        /// True if it succeeds, false if it fails.
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
         /// </returns>
         public async Task<bool> SetSimpleValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
         {
@@ -73,7 +73,8 @@ namespace RedisCacheProvider
             {
                 _logger.LogWarning("RedisCache threw exception", e);
                 throw;
-            }        }
+            }
+        }
 
         /// <summary>
         /// Gets cache value asynchronously.
@@ -82,7 +83,7 @@ namespace RedisCacheProvider
         /// <param name="key">The cache key.</param>
         /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
         /// <returns>
-        /// The cache value.
+        /// The cached value.
         /// </returns>
         public async Task<T> GetSimpleValueAsync<T>(string key, CancellationToken cancellationToken = default)
         {
@@ -114,7 +115,7 @@ namespace RedisCacheProvider
         /// <param name="key">The cache key.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
-        /// True if it succeeds, false if it fails.
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
         /// </returns>
         public async Task<bool> DeleteSimpleValueAsync(string key, CancellationToken cancellationToken = default)
         {
@@ -131,7 +132,8 @@ namespace RedisCacheProvider
             {
                 _logger.LogWarning("RedisCache threw exception", e);
                 throw;
-            }        }
+            }
+        }
 
         /// <summary>
         /// Deletes cache entry asynchronously.
@@ -141,7 +143,7 @@ namespace RedisCacheProvider
         /// <param name="value">The cache value (if the cached value is different, then don't delete).</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
-        /// True if it succeeds, false if it fails.
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
         /// </returns>
         public async Task<bool> DeleteSimpleValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
@@ -178,7 +180,7 @@ namespace RedisCacheProvider
         /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
-        /// True if it succeeds, false if it fails.
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
         /// </returns>
         /// <seealso cref="ICache.SetValueAsync{T}(string,T,TimeSpan,CancellationToken)"/>
         public async Task<bool> SetValueAsync<T>(string key, T value, TimeSpan expiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
@@ -215,7 +217,7 @@ namespace RedisCacheProvider
         /// <param name="key">The cache key.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
         /// <returns>
-        /// The cache value.
+        /// The cached value.
         /// </returns>
         /// <seealso cref="ICache.GetValueAsync{T}(string,CancellationToken)"/>
         public async Task<T> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
@@ -255,6 +257,16 @@ namespace RedisCacheProvider
             }
         }
 
+        /// <summary>
+        /// Deletes cache entry asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value (if the cached value is different, then don't delete).</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
+        /// </returns>
         public async Task<bool> DeleteValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
             try
@@ -280,12 +292,33 @@ namespace RedisCacheProvider
             }
         }
 
-        public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Increments cache counter by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="id">Unique identifier used to decrement the counter before the expiration.</param>
+        /// <param name="expiration">The time period after which the semaphore will be automatically released.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
+        /// </returns>
+        public Task<bool> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
         {
             return IncrementCounterAsync(key, id, expiration, Int32.MaxValue, cancellationToken);
         }
 
-        public async Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Increments cache counter by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="id">Unique identifier used to decrement the counter before the expiration.</param>
+        /// <param name="expiration">The time period after which the semaphore will be automatically released.</param>
+        /// <param name="maxValue">The maximum counter value.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
+        /// </returns>
+        public async Task<bool> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -299,10 +332,10 @@ namespace RedisCacheProvider
                                 value = id,
                                 currentTime = _timestampProvider.Get(),
                                 expirationTime = expiration.TotalMilliseconds,
-                                maxValue = Int32.MaxValue
+                                maxValue = maxValue
                             });
                         
-                        return (int)result;
+                        return (int)result > 0;
                     },
                     cancellationToken);
             }
@@ -313,7 +346,16 @@ namespace RedisCacheProvider
             }
         }
 
-        public async Task<int> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Decrements cache counter by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="id">Unique identifier used to decrement the counter before the expiration.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The value <c>true</c> if it succeeds; otherwise <c>false</c>.
+        /// </returns>
+        public async Task<bool> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -328,7 +370,7 @@ namespace RedisCacheProvider
                                 currentTime = _timestampProvider.Get(),
                             });
                         
-                        return (int)result;
+                        return true;
                     },
                     cancellationToken);
             }
@@ -339,6 +381,14 @@ namespace RedisCacheProvider
             }
         }
 
+        /// <summary>
+        /// Retrieves current cache counter value asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache counter value.
+        /// </returns>
         public async Task<int> GetCounterAsync(string key, CancellationToken cancellationToken = default)
         {
             try

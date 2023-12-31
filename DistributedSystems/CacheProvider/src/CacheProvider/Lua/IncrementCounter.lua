@@ -7,15 +7,10 @@ redis.call("ZREMRANGEBYSCORE", @key, 0, current_time)
 -- get current count
 local current_count = redis.call("ZCARD", @key)
 if current_count >= max_value then
-    return current_count
+    return 0
 end
 
 -- add new item
-local type_key = @key .. ":type"
-if redis.call("GET", type_key) == "1" then
-    return -1
-end
-redis.call("SET", type_key, 2) -- 1:simple; 2:with-expiration
 redis.call("ZADD", @key, current_time + expiration_time, @value)
 return redis.call("ZCARD", @key)
 

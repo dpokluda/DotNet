@@ -103,7 +103,7 @@ public class DistributedLockTests
         await lockHandle.ReleaseAsync();
         
         // test non-existence of lock cache entry
-        Assert.IsNull(await cache.GetValueAsync<string>(LockPrefix + name));
+        await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>(LockPrefix + name));
     }
     
     [TestMethod]
@@ -125,7 +125,7 @@ public class DistributedLockTests
         await lockHandle.DisposeAsync();
         
         // test non-existence of lock cache entry
-        Assert.IsNull(await cache.GetValueAsync<string>(LockPrefix + name));
+        await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>(LockPrefix + name));
     }
     
     [TestMethod]
@@ -147,7 +147,7 @@ public class DistributedLockTests
         lockHandle.Dispose();
         
         // test non-existence of lock cache entry
-        Assert.IsNull(await cache.GetValueAsync<string>(LockPrefix + name));
+        await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>(LockPrefix + name));
     }
     
     private RedisCacheProvider.RedisCacheProvider GetCacheProvider()

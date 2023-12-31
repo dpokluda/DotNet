@@ -18,13 +18,12 @@ public class RedisDistributedSemaphoreProvider : IDistributedSemaphoreProvider
         _logger = logger;
     }
     
-    public async Task<IDistributedSemaphoreHandle> AcquireAsync(string name, int maxCount, CancellationToken cancellationToken = default)
+    public async Task<IDistributedSemaphoreHandle> AcquireAsync(string name, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
     {
         var _cache = _cacheProvider.GetCache();
         var lockName = SemaphorePrefix + name;
         var lockValue = Guid.NewGuid().ToString("N");
-        if (await _cache.SetValueAsync(lockName, lockValue, onlyIfNew: true,
-                cancellationToken: cancellationToken))
+        if (await _cache.IncrementCounterAsync(lockName, lockValue, expiration, maxValue, cancellationToken))
         {
             return new RedisDistributedSemaphoreHandle(lockName, _cache, _logger);
         }

@@ -18,7 +18,7 @@ public class DistributedSemaphoreTests
     {
         var provider = new RedisDistributedSemaphoreProvider(GetCacheProvider(), new NullLogger<RedisDistributedSemaphoreProvider>());
         var name = Guid.NewGuid().ToString("N");
-        var lockHandle = await provider.AcquireAsync(name, 2, CancellationToken.None);
+        var lockHandle = await provider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), 2, CancellationToken.None);
         Assert.IsNotNull(lockHandle);
         await lockHandle.ReleaseAsync();
     }

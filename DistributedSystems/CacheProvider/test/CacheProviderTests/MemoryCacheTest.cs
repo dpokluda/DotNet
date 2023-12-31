@@ -162,14 +162,14 @@ public class MemoryCacheTest
     {
         ICache cache = GetMemoryCache();
         Assert.AreEqual(0, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "1"));
         Assert.AreEqual(0, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
         Assert.AreEqual(2, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(1, await cache.DecrementCounterAsync("key", "2"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "2"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "1"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "1"));
         Assert.AreEqual(0, await cache.GetCounterAsync("key"));
     }
     
@@ -178,15 +178,17 @@ public class MemoryCacheTest
     {
         ICache cache = GetMemoryCache();
         Assert.AreEqual(0, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "1"));
         Assert.AreEqual(0, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10), 2));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10), 2));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10), 2));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10), 2));
+        Assert.AreEqual(1, await cache.GetCounterAsync("key"));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10), 2));
         Assert.AreEqual(2, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(1, await cache.DecrementCounterAsync("key", "2"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.IsFalse(await cache.IncrementCounterAsync("key", "3", TimeSpan.FromMilliseconds(10), 2));
+        Assert.AreEqual(2, await cache.GetCounterAsync("key"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "2"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "1"));
+        Assert.IsTrue(await cache.DecrementCounterAsync("key", "1"));
         Assert.AreEqual(0, await cache.GetCounterAsync("key"));
     }
 
@@ -194,16 +196,15 @@ public class MemoryCacheTest
     public async Task IncrementAndDecrementCounter_Expiration()
     {
         ICache cache = GetMemoryCache();
-        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
         _timestampProvider.Value = 5;
         Assert.AreEqual(1, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
         Assert.AreEqual(2, await cache.GetCounterAsync("key"));
         _timestampProvider.Value = 10;
         Assert.AreEqual(1, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(1, await cache.GetCounterAsync("key"));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
+        Assert.IsTrue(await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
         Assert.AreEqual(2, await cache.GetCounterAsync("key"));
         _timestampProvider.Value = 15;
         Assert.AreEqual(1, await cache.GetCounterAsync("key"));
