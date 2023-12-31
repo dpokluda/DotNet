@@ -25,7 +25,14 @@ public class RedisDistributedLockHandle : IDistributedLockHandle
 
     public async Task<bool> IsStillValidAsync(CancellationToken cancellationToken = default)
     {
-        return (await _cache.GetValueAsync<string>(_lockName, cancellationToken) == _lockValue);
+        try
+        {
+            return (await _cache.GetValueAsync<string>(_lockName, cancellationToken) == _lockValue);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public async ValueTask DisposeAsync()

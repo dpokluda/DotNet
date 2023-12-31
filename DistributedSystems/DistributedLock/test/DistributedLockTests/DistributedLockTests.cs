@@ -15,7 +15,6 @@ public class DistributedLockTests
     private const string LockPrefix = "lock:";
 
     private readonly ManualTimestampProvider _timestampProvider = new ManualTimestampProvider();
-
     
     [TestMethod]
     public async Task SimpleAcquireAndDispose()
@@ -24,7 +23,10 @@ public class DistributedLockTests
         var name = Guid.NewGuid().ToString("N");
         var lockHandle = await provider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), CancellationToken.None);
         Assert.IsNotNull(lockHandle);
+        Assert.IsTrue(await lockHandle.IsStillValidAsync(CancellationToken.None));
+        
         await lockHandle.ReleaseAsync();
+        Assert.IsFalse(await lockHandle.IsStillValidAsync(CancellationToken.None));
     }
 
     [TestMethod]
@@ -65,6 +67,7 @@ public class DistributedLockTests
         // acquire new lock - should succeed
         var lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), CancellationToken.None);
         Assert.IsNotNull(lockHandle);
+        Assert.IsTrue(await lockHandle.IsStillValidAsync(CancellationToken.None));
 
         // acquire an already acquired lock - should fail
         _timestampProvider.Value = 0;
@@ -73,15 +76,35 @@ public class DistributedLockTests
             await lockProvider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), CancellationToken.None);
         });
         
-        // release the acquired lock
+        // expiration
+        _timestampProvider.Value = 10;
+        Assert.IsFalse(await lockHandle.IsStillValidAsync(CancellationToken.None));
         await lockHandle.ReleaseAsync();
         
         // now we should be able to re-acquire the same lock
         lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), CancellationToken.None);
         Assert.IsNotNull(lockHandle);
+        Assert.IsTrue(await lockHandle.IsStillValidAsync(CancellationToken.None));
         
-        // final release
+        // expirations
+        _timestampProvider.Value = 20;
+        Assert.IsFalse(await lockHandle.IsStillValidAsync(CancellationToken.None));
+    }
+    
+    [TestMethod]
+    public async Task IsStillValid()
+    {
+        var name = Guid.NewGuid().ToString("N");
+        var cacheProvider = GetCacheProvider();
+        var lockProvider = new RedisDistributedLockProvider(cacheProvider, new NullLogger<RedisDistributedLockProvider>());
+
+        // acquire lock
+        var lockHandle = await lockProvider.AcquireAsync(name, TimeSpan.FromMilliseconds(10), CancellationToken.None);
+        Assert.IsTrue(await lockHandle.IsStillValidAsync(CancellationToken.None));
+
+        //release lock
         await lockHandle.ReleaseAsync();
+        Assert.IsFalse(await lockHandle.IsStillValidAsync(CancellationToken.None));
     }
     
     [TestMethod]
@@ -159,7 +182,7 @@ public class DistributedLockTests
             {
                 ConnectionString = LocalRedisConfiguration
             }), 
-            new ManualTimestampProvider(),
+            _timestampProvider,
             new NullLogger<RedisCache>());
     }
 }

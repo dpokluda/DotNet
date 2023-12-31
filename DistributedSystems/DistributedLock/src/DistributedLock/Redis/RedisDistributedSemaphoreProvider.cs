@@ -18,16 +18,24 @@ public class RedisDistributedSemaphoreProvider : IDistributedSemaphoreProvider
         _logger = logger;
     }
     
-    public async Task<IDistributedSemaphoreHandle> AcquireAsync(string name, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
+    public async Task<IDistributedSemaphoreHandle> AcquireAsync(string name, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
     {
         var _cache = _cacheProvider.GetCache();
         var lockName = SemaphorePrefix + name;
-        var lockValue = Guid.NewGuid().ToString("N");
+        var lockValue = id;
         if (await _cache.IncrementCounterAsync(lockName, lockValue, expiration, maxValue, cancellationToken))
         {
-            return new RedisDistributedSemaphoreHandle(lockName, _cache, _logger);
+            return new RedisDistributedSemaphoreHandle(lockName, id, _cache, _logger);
         }
         
         throw new DistributedResourceException(UnableToAcquireExceptionMessage);
+    }
+
+    public async Task<int> GetCountAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var _cache = _cacheProvider.GetCache();
+        var lockName = SemaphorePrefix + name;
+
+        return await _cache.GetCounterAsync(lockName, cancellationToken);
     }
 }

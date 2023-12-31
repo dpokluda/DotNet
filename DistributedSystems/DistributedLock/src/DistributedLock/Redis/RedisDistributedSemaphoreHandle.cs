@@ -7,27 +7,29 @@ public class RedisDistributedSemaphoreHandle : IDistributedSemaphoreHandle
 {
     private readonly ICache _cache;
     private readonly string _semaphoreName;
+    private readonly string _id;
     private readonly ILogger<RedisDistributedSemaphoreProvider> _logger;
 
-    public RedisDistributedSemaphoreHandle(string semaphoreName, ICache cache, ILogger<RedisDistributedSemaphoreProvider> logger)
+    public RedisDistributedSemaphoreHandle(string semaphoreName, string id, ICache cache, ILogger<RedisDistributedSemaphoreProvider> logger)
     {
         _semaphoreName = semaphoreName;
+        _id = id;
         _cache = cache;
         _logger = logger;
     }
 
-    public ValueTask DisposeAsync()
+    public async Task ReleaseAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await _cache.DecrementCounterAsync(_semaphoreName, _id, cancellationToken);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ReleaseAsync(CancellationToken.None);
     }
 
     public void Dispose()
     {
-        throw new NotImplementedException();
-    }
-
-    public Task ReleaseAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
+        Task.Factory.StartNew(async () => await ReleaseAsync(CancellationToken.None)).Wait();
     }
 }
