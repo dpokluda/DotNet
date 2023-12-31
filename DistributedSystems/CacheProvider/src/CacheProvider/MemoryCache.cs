@@ -1,8 +1,12 @@
 ﻿using Newtonsoft.Json;
+using KeyNotFoundException = System.Collections.Generic.KeyNotFoundException;
 
 namespace CacheProvider
 {
-    public class SimpleCache : ICache
+    /// <summary>
+    /// Simple in-memory cache implementation that stores all data in a dictionary.
+    /// </summary>
+    public class MemoryCache : ICache
     {
         // cache is keyed by counter name (key)
         // - each cache value contain the actual counter values
@@ -11,7 +15,7 @@ namespace CacheProvider
         private readonly Dictionary<string, SortedList<long, List<string>>> _cache = new();
         private readonly ITimestampProvider _timestampProvider;
 
-        public SimpleCache(ITimestampProvider timestampProvider)
+        public MemoryCache(ITimestampProvider timestampProvider)
         {
             _timestampProvider = timestampProvider;
         }
@@ -56,7 +60,7 @@ namespace CacheProvider
                 }
                 else
                 {
-                    throw new InvalidDataException();
+                    throw new KeyNotFoundException();
                 }
             }
             

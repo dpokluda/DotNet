@@ -4,7 +4,7 @@ using CacheProvider.Timestamp;
 namespace CacheProviderTests;
 
 [TestClass]
-public class SimpleCacheTest
+public class MemoryCacheTest
 {
     private ManualTimestampProvider _timestampProvider = new ManualTimestampProvider();
     
@@ -150,6 +150,6 @@ public class SimpleCacheTest
     {
         _timestampProvider.Value = 0;
 
-        return new SimpleCache(_timestampProvider);
+        return new MemoryCache(_timestampProvider);
     }
 }
