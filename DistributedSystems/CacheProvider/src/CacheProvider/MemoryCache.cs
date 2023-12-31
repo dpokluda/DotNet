@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using KeyNotFoundException = System.Collections.Generic.KeyNotFoundException;
 
 namespace CacheProvider
 {
@@ -13,6 +12,9 @@ namespace CacheProvider
         //        - counter values is sorted list sorted by expiration date
         //        - sorted list values are actual ids (it is possible that counter is incremented multiple times at the same time
         private readonly Dictionary<string, SortedList<long, List<string>>> _cache = new();
+        // separate cache for simple values
+        private readonly Dictionary<string, string> _simpleCache = new();
+        
         private readonly ITimestampProvider _timestampProvider;
 
         public MemoryCache(ITimestampProvider timestampProvider)
@@ -20,6 +22,102 @@ namespace CacheProvider
             _timestampProvider = timestampProvider;
         }
 
+        /// <summary>
+        /// Sets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value.</param>
+        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        public Task<bool> SetSimpleValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
+        {
+            if (onlyIfNew && _simpleCache.ContainsKey(key))
+            {
+                return Task.FromResult(false);
+            }
+            _simpleCache[key] = JsonConvert.SerializeObject(value);
+            return Task.FromResult(true);        
+        }
+
+        /// <summary>
+        /// Gets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache value.
+        /// </returns>
+        public Task<T> GetSimpleValueAsync<T>(string key, CancellationToken cancellationToken = default)
+        {
+            if (_simpleCache.TryGetValue(key, out string? value))
+            {
+
+                try
+                {
+                    return Task.FromResult(JsonConvert.DeserializeObject<T>(value));
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidCastException(e.Message, e);
+                }
+            }
+            throw new KeyNotFoundException("Cache entry with the specified key is not found.");        
+        }
+
+        /// <summary>
+        /// Deletes cache entry asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        public Task<bool> DeleteSimpleValueAsync(string key, CancellationToken cancellationToken = default)
+        {
+            _simpleCache.Remove(key);
+
+            return Task.FromResult(true);        
+        }
+
+        /// <summary>
+        /// Deletes cache entry asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value (if the cached value is different, then don't delete).</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        public async Task<bool> DeleteSimpleValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
+        {
+            if (value.Equals(await GetSimpleValueAsync<T>(key, cancellationToken)))
+            {
+                await DeleteSimpleValueAsync(key, cancellationToken);
+                return true;
+            }
+
+            return false;        
+        }
+
+        /// <summary>
+        /// Sets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value.</param>
+        /// <param name="expiration">The relative time when the cache entry expires.</param>
+        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
         public Task<bool> SetValueAsync<T>(string key, T value, TimeSpan expiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
         {
             if (onlyIfNew && _cache.ContainsKey(key))
@@ -41,6 +139,15 @@ namespace CacheProvider
             return Task.FromResult(true);
         }
         
+        /// <summary>
+        /// Gets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache value.
+        /// </returns>
         public Task<T> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
         {
             if (_cache.TryGetValue(key, out SortedList<long, List<string>>? entry))
@@ -67,6 +174,16 @@ namespace CacheProvider
             throw new KeyNotFoundException("Cache entry with the specified key is not found.");
         }
 
+        /// <summary>
+        /// Deletes cache entry asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value (if the cached value is different, then don't delete).</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
         public async Task<bool> DeleteValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
             if (value.Equals(await GetValueAsync<T>(key, cancellationToken)))
@@ -78,11 +195,32 @@ namespace CacheProvider
             return false;
         }
 
+        /// <summary>
+        /// Increments cache counter by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="id">Unique identifier used to decrement the counter before the expiration.</param>
+        /// <param name="expiration">The time period after which the semaphore will be automatically released.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache counter value.
+        /// </returns>
         public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
         {
             return IncrementCounterAsync(key, id, expiration, Int32.MaxValue, cancellationToken);
         }
         
+        /// <summary>
+        /// Increments cache counter by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="id">Unique identifier used to decrement the counter before the expiration.</param>
+        /// <param name="expiration">The time period after which the semaphore will be automatically released.</param>
+        /// <param name="maxValue">The maximum counter value.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache counter value.
+        /// </returns>
         public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
         {
             var now = _timestampProvider.Get();
@@ -122,6 +260,15 @@ namespace CacheProvider
             return Task.FromResult(GetCounterCount(entry));
         }
         
+        /// <summary>
+        /// Decrements cache counter by one asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="id">Unique identifier used to decrement the counter before the expiration.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache counter value.
+        /// </returns>
         public Task<int> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
         {
             var now = _timestampProvider.Get();
@@ -156,6 +303,14 @@ namespace CacheProvider
             return Task.FromResult(GetCounterCount(entry));
         }
 
+        /// <summary>
+        /// Retrieves current cache counter value asynchronously.
+        /// </summary>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache counter value.
+        /// </returns>
         public Task<int> GetCounterAsync(string key, CancellationToken cancellationToken = default)
         {
             var now = _timestampProvider.Get();

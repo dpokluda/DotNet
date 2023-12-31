@@ -53,6 +53,127 @@ namespace RedisCacheProvider
         /// <typeparam name="T">The cache value type.</typeparam>
         /// <param name="key">The cache key.</param>
         /// <param name="value">The cache value.</param>
+        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        public async Task<bool> SetSimpleValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var serializedValue = JsonConvert.SerializeObject(value);
+                        return await GetDatabase().StringSetAsync(key, serializedValue, null, onlyIfNew ? When.NotExists : When.Always);
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }        }
+
+        /// <summary>
+        /// Gets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// The cache value.
+        /// </returns>
+        public async Task<T> GetSimpleValueAsync<T>(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var value = await GetDatabase().StringGetAsync(key);
+                        if (!value.HasValue)
+                        {
+                            return default;
+                        }
+
+                        return JsonConvert.DeserializeObject<T>(value);
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes cache entry asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        public async Task<bool> DeleteSimpleValueAsync(string key, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        await GetDatabase().KeyDeleteAsync(key);
+                        return true;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }        }
+
+        /// <summary>
+        /// Deletes cache entry asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value (if the cached value is different, then don't delete).</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        public async Task<bool> DeleteSimpleValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.DeleteSimpleValue, 
+                            new
+                            {
+                                key = (RedisKey)key, 
+                                value = JsonConvert.SerializeObject(value)
+                            });
+                               
+                        return (int)result == 1;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Sets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value.</param>
         /// <param name="expiration">The relative time when the cache entry expires.</param>
         /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
         /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>

@@ -11,6 +11,7 @@ namespace CacheProvider.Lua
         private static readonly Lazy<LuaScript> _setValue = new Lazy<LuaScript>(() => LoadLuaScript("SetValue"));
         private static readonly Lazy<LuaScript> _getValue = new Lazy<LuaScript>(() => LoadLuaScript("GetValue"));
         private static readonly Lazy<LuaScript> _deleteValue = new Lazy<LuaScript>(() => LoadLuaScript("DeleteValue"));
+        private static readonly Lazy<LuaScript> _deleteSimpleValue = new Lazy<LuaScript>(() => LoadLuaScript("DeleteSimpleValue"));
         private static readonly Lazy<LuaScript> _incrementCounter = new Lazy<LuaScript>(() => LoadLuaScript("IncrementCounter"));
         private static readonly Lazy<LuaScript> _decrementCounter = new Lazy<LuaScript>(() => LoadLuaScript("DecrementCounter"));
         private static readonly Lazy<LuaScript> _getCounter = new Lazy<LuaScript>(() => LoadLuaScript("GetCounter"));
@@ -26,6 +27,10 @@ namespace CacheProvider.Lua
         public static LuaScript DeleteValue
         {
             get { return _deleteValue.Value; }
+        }
+        public static LuaScript DeleteSimpleValue
+        {
+            get { return _deleteSimpleValue.Value; }
         }
         public static LuaScript IncrementCounter
         {

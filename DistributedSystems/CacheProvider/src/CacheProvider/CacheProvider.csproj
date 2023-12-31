@@ -28,6 +28,8 @@
     <EmbeddedResource Include="Lua\SetValue.lua" />
     <None Remove="Lua\DecrementCounter.lua" />
     <EmbeddedResource Include="Lua\DecrementCounter.lua" />
+    <None Remove="Lua\DeleteSimpleValue.lua" />
+    <EmbeddedResource Include="Lua\DeleteSimpleValue.lua" />
   </ItemGroup>
   
 </Project>

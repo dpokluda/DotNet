@@ -16,6 +16,71 @@ public class MemoryCacheTest
     }
 
     [TestMethod]
+    public async Task SetAndGetSimpleStringValue()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetSimpleValueAsync("key", "value", false, CancellationToken.None));
+        Assert.AreEqual("value", await cache.GetSimpleValueAsync<string>("key"));
+    }
+
+    [TestMethod]
+    public async Task SetAndGetSimpleIntValue()
+    {
+        ICache cache = GetMemoryCache();
+        await cache.SetSimpleValueAsync("key", 123, false, CancellationToken.None);
+        Assert.AreEqual(123, await cache.GetSimpleValueAsync<int>("key"));
+    }
+
+    [TestMethod]
+    public async Task SetSimpleValueIfNew()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetSimpleValueAsync("key", "value", true, CancellationToken.None));
+        Assert.AreEqual("value", await cache.GetSimpleValueAsync<string>("key"));
+
+        Assert.IsFalse(await cache.SetSimpleValueAsync("key", "value2", true, CancellationToken.None));
+        Assert.AreEqual("value", await cache.GetSimpleValueAsync<string>("key"));
+    }
+    
+    [TestMethod]
+    public async Task GetNotFoundSimpleValue()
+    {
+        ICache cache = GetMemoryCache();
+        await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>("key"));
+    }
+
+    [TestMethod]
+    public async Task DeleteSimpleValue()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetSimpleValueAsync("key", "value", false, CancellationToken.None));
+        Assert.IsTrue(await cache.DeleteSimpleValueAsync("key"));
+    }
+    
+    [TestMethod]
+    public async Task DeleteNotFoundSimpleValue()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.DeleteSimpleValueAsync("key"));
+    }
+    
+    [TestMethod]
+    public async Task DeleteWithSimpleValue()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetSimpleValueAsync("key", "value", false, CancellationToken.None));
+        Assert.IsTrue(await cache.DeleteSimpleValueAsync("key", "value"));
+    }
+    
+    [TestMethod]
+    public async Task DeleteWithSimpleValueFail()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetSimpleValueAsync("key", "value", false, CancellationToken.None));
+        Assert.IsFalse(await cache.DeleteSimpleValueAsync("key", "value2"));
+    }
+
+    [TestMethod]
     public async Task SetAndGetString()
     {
         ICache cache = GetMemoryCache();
