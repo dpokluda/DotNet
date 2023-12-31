@@ -1,4 +1,5 @@
 using CacheProvider.Configuration;
+using CacheProvider.Timestamp;
 using DistributedLock.Exceptions;
 using DistributedLock.Redis;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -124,6 +125,7 @@ public class DistributedLockTests
             {
                 ConnectionString = LocalRedisConfiguration
             }), 
+            new ManualTimestampProvider(),
             new NullLogger<RedisCache>());
     }
 }

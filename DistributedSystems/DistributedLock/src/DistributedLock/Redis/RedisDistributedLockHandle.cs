@@ -21,7 +21,7 @@ public class RedisDistributedLockHandle : IDistributedLockHandle
 
     public async Task ReleaseAsync(CancellationToken cancellationToken = default)
     {
-        await _cache.DeleteAsync(_lockName, _lockValue, CancellationToken.None);
+        await _cache.DeleteValueAsync(_lockName, _lockValue, CancellationToken.None);
     }
     
     public async ValueTask DisposeAsync()

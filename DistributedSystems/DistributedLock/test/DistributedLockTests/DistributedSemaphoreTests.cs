@@ -1,4 +1,5 @@
 ﻿using CacheProvider.Configuration;
+using CacheProvider.Timestamp;
 using DistributedLock.Redis;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -29,6 +30,7 @@ public class DistributedSemaphoreTests
             {
                 ConnectionString = LocalRedisConfiguration
             }), 
+            new ManualTimestampProvider(),
             new NullLogger<RedisCache>());
     }
 }
