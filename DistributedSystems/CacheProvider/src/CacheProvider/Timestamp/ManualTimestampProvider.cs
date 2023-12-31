@@ -16,4 +16,9 @@ public class ManualTimestampProvider : ITimestampProvider
     {
         return _value;
     }
+
+    public void Increment()
+    {
+        _value++;
+    }
 }

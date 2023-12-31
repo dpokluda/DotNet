@@ -1,5 +1,5 @@
-if redis.call("get", @key) == @value then
-    return redis.call("del",@key)
+if redis.call("HGET", @key, "value") == @value then
+    return redis.call("DEL",@key)
 else
     return 0
 end

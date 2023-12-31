@@ -48,6 +48,46 @@ namespace RedisCacheProvider
         }
 
         /// <summary>
+        /// Sets cache value asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The cache value type.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="value">The cache value.</param>
+        /// <param name="expiration">The relative time when the cache entry expires.</param>
+        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
+        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
+        /// <returns>
+        /// True if it succeeds, false if it fails.
+        /// </returns>
+        /// <seealso cref="ICache.SetValueAsync{T}(string,T,TimeSpan,CancellationToken)"/>
+        public async Task<bool> SetValueAsync<T>(string key, T value, TimeSpan expiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.SetValue, 
+                            new
+                            {
+                                key = (RedisKey)key, 
+                                value = JsonConvert.SerializeObject(value),
+                                ifNew = onlyIfNew,
+                                currentTime = _timestampProvider.Get(),
+                                expirationTime = (long)expiration.TotalMilliseconds
+                            });
+                        return (int)result == 2;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Gets cache value asynchronously.
         /// </summary>
         /// <typeparam name="T">The cache value type.</typeparam>
@@ -62,94 +102,30 @@ namespace RedisCacheProvider
             try
             {
                 return await _policy.ExecuteAsync(async (ct) =>
-                           {
-                               var value = await GetDatabase().StringGetAsync(key);
-                               if (!value.HasValue)
-                               {
-                                   return default;
-                               }
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.GetValue, 
+                            new
+                            {
+                                key = (RedisKey)key, 
+                                currentTime = _timestampProvider.Get(),
+                            });
 
-                               return JsonConvert.DeserializeObject<T>(value);
-                           },
-                           cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Sets cache value asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The cache value type.</typeparam>
-        /// <param name="key">The cache key.</param>
-        /// <param name="value">The cache value.</param>
-        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
-        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
-        /// <returns>
-        /// True if it succeeds, false if it fails.
-        /// </returns>
-        /// <seealso cref="ICache.SetValueAsync{T}(string,T,CancellationToken)"/>
-        public async Task<bool> SetValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                           {
-                               var serializedValue = JsonConvert.SerializeObject(value);
-                               return await GetDatabase().StringSetAsync(key, serializedValue, null, onlyIfNew ? When.NotExists : When.Always);
-                           },
-                           cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Sets cache value asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The cache value type.</typeparam>
-        /// <param name="key">The cache key.</param>
-        /// <param name="value">The cache value.</param>
-        /// <param name="relativeExpiration">The relative time when the cache entry expires.</param>
-        /// <param name="onlyIfNew">(Optional) Boolean flag indicating whether we should only set the key if it does not already exist.</param>
-        /// <param name="cancellationToken">(Optional) A token that allows processing to be cancelled.</param>
-        /// <returns>
-        /// True if it succeeds, false if it fails.
-        /// </returns>
-        /// <seealso cref="ICache.SetValueAsync{T}(string,T,TimeSpan,CancellationToken)"/>
-        public async Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                           {
-                               var serializedValue = JsonConvert.SerializeObject(value);
-                               return await GetDatabase().StringSetAsync(key, serializedValue, relativeExpiration, onlyIfNew ? When.NotExists : When.Always);
-                           },
-                           cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteValueAsync(string key, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                           {
-                               return await GetDatabase().KeyDeleteAsync(key);
-                           },
-                           cancellationToken);
+                        if (result.IsNull)
+                        {
+                            throw new KeyNotFoundException();
+                        }
+                        
+                        try
+                        {
+                            return JsonConvert.DeserializeObject<T>(result.ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            throw new InvalidCastException(e.Message, e);
+                        }
+                    },
+                    cancellationToken);
             }
             catch (Exception e)
             {
@@ -164,31 +140,76 @@ namespace RedisCacheProvider
             {
                 return await _policy.ExecuteAsync(async (ct) =>
                            {
-
-                               if (typeof(T) == typeof(string))
-                               {
-                                   var result = await GetDatabase().ScriptEvaluateAsync(
-                                       LuaResource.DeleteValue, 
-                                       new
-                                       {
-                                           key = (RedisKey)key, 
-                                           value = $"\"{value.ToString()}\""
-                                       });
-                                   return (int)result == 1;
-                               }
-                               else
-                               {
-                                   var result = await GetDatabase().ScriptEvaluateAsync(
-                                       LuaResource.DeleteValue, 
-                                       new
-                                       {
-                                           key = (RedisKey)key, 
-                                           value
-                                       });
-                                   return (int)result == 1;
-                               }
+                               var result = await GetDatabase().ScriptEvaluateAsync(
+                                   LuaResource.DeleteValue, 
+                                   new
+                                   {
+                                       key = (RedisKey)key, 
+                                       value = JsonConvert.SerializeObject(value)
+                                   });
+                               
+                               return (int)result == 1;
                            },
                            cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
+        {
+            return IncrementCounterAsync(key, id, expiration, Int32.MaxValue, cancellationToken);
+        }
+
+        public async Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.IncrementCounter, 
+                            new
+                            {
+                                key = (RedisKey)key,
+                                value = id,
+                                currentTime = _timestampProvider.Get(),
+                                expirationTime = expiration.TotalMilliseconds,
+                                maxValue = Int32.MaxValue
+                            });
+                        
+                        return (int)result;
+                    },
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("RedisCache threw exception", e);
+                throw;
+            }
+        }
+
+        public async Task<int> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _policy.ExecuteAsync(async (ct) =>
+                    {
+                        var result = await GetDatabase().ScriptEvaluateAsync(
+                            LuaResource.DecrementCounter, 
+                            new
+                            {
+                                key = (RedisKey)key,
+                                value = id,
+                                currentTime = _timestampProvider.Get(),
+                            });
+                        
+                        return (int)result;
+                    },
+                    cancellationToken);
             }
             catch (Exception e)
             {
@@ -210,115 +231,7 @@ namespace RedisCacheProvider
                                 key = (RedisKey)key, 
                                 currentTime = _timestampProvider.Get()
                             });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public Task<int> IncrementCounterAsync(string key, CancellationToken cancellationToken = default)
-        {
-            return IncrementCounterAsync(key, Int32.MaxValue, cancellationToken);
-        }
-
-        public async Task<int> IncrementCounterAsync(string key, int maxValue, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.IncrementCounter, 
-                            new
-                            {
-                                key = (RedisKey)key, 
-                                maxValue
-                            });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public async Task<int> DecrementCounterAsync(string key, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.DecrementCounter, 
-                            new
-                            {
-                                key = (RedisKey)key
-                            });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-        
-        public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
-        {
-            return IncrementCounterAsync(key, id, expiration, Int32.MaxValue, cancellationToken);
-        }
-
-        public async Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.IncrementCounterWithExpiration, 
-                            new
-                            {
-                                key = (RedisKey)key,
-                                value = id,
-                                currentTime = _timestampProvider.Get(),
-                                expirationTime = expiration.TotalMilliseconds,
-                                maxValue = Int32.MaxValue
-                            });
-                        return (int)result;
-                    },
-                    cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("RedisCache threw exception", e);
-                throw;
-            }
-        }
-
-        public async Task<int> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _policy.ExecuteAsync(async (ct) =>
-                    {
-                        var result = await GetDatabase().ScriptEvaluateAsync(
-                            LuaResource.DecrementCounterWithExpiration, 
-                            new
-                            {
-                                key = (RedisKey)key,
-                                value = id,
-                                currentTime = _timestampProvider.Get(),
-                            });
+                        
                         return (int)result;
                     },
                     cancellationToken);

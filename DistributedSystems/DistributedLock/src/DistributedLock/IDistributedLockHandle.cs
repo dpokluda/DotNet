@@ -10,4 +10,11 @@ public interface IDistributedLockHandle : IAsyncDisposable, IDisposable
     /// </summary>
     /// <param name="cancellationToken">Specifies a token by which the wait can be canceled</param>
     Task ReleaseAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks asynchronously whether the current lock is still acquired or not.
+    /// </summary>
+    /// <param name="cancellationToken">Specifies a token by which the wait can be canceled</param>
+    /// <returns>Boolean value <c>true</c> if it is still acquired; otherwise <c>false</c>.</returns>
+    Task<bool> IsStillValidAsync(CancellationToken cancellationToken = default);
 }

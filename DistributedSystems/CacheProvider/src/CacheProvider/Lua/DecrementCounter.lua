@@ -1,8 +1,11 @@
-local current_value = tonumber(redis.call("get", @key))
-if current_value then
-    if current_value > 0 then
-        return redis.call("decr",@key)
-    end
-end
+local current_time = tonumber(@currentTime)
 
-return 0
+-- remove counter
+redis.call("ZREM", @key, @value)
+
+-- remove expired items
+redis.call("ZREMRANGEBYSCORE", @key, 0, current_time)
+-- get current count
+local current_count = redis.call("ZCARD", @key)
+
+return current_count

@@ -1,128 +1,155 @@
 ﻿using CacheProvider;
+using CacheProvider.Timestamp;
 
 namespace CacheProviderTests;
 
 [TestClass]
 public class SimpleCacheTest
 {
+    private ManualTimestampProvider _timestampProvider = new ManualTimestampProvider();
+    
     [TestMethod]
     public void Construct()
     {
-        ICache cache = new SimpleCache();
+        ICache cache = GetMemoryCache();
         Assert.IsNotNull(cache);
     }
 
     [TestMethod]
     public async Task SetAndGetString()
     {
-        ICache cache = new SimpleCache();
-        Assert.IsTrue(await cache.SetValueAsync("key", "value", false, CancellationToken.None));
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(1), false, CancellationToken.None));
         Assert.AreEqual("value", await cache.GetValueAsync<string>("key"));
     }
 
     [TestMethod]
     public async Task SetAndGetInt()
     {
-        ICache cache = new SimpleCache();
-        await cache.SetValueAsync("key", 123, false, CancellationToken.None);
+        ICache cache = GetMemoryCache();
+        await cache.SetValueAsync("key", 123, TimeSpan.FromMilliseconds(1), false, CancellationToken.None);
         Assert.AreEqual(123, await cache.GetValueAsync<int>("key"));
     }
 
     [TestMethod]
     public async Task SetIfNew()
     {
-        ICache cache = new SimpleCache();
-        Assert.IsTrue(await cache.SetValueAsync("key", "value", true, CancellationToken.None));
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(1), true, CancellationToken.None));
+        Assert.AreEqual("value", await cache.GetValueAsync<string>("key"));
+        
+        Assert.IsFalse(await cache.SetValueAsync("key", "value2", TimeSpan.FromMilliseconds(1), true, CancellationToken.None));
         Assert.AreEqual("value", await cache.GetValueAsync<string>("key"));
     }
-
-    [TestMethod]
-    public async Task SetIfNewFail()
-    {
-        ICache cache = new SimpleCache();
-        Assert.IsTrue(await cache.SetValueAsync("key", "value", true, CancellationToken.None));
-        Assert.IsFalse(await cache.SetValueAsync("key", "value2", true, CancellationToken.None));
-        Assert.AreEqual("value", await cache.GetValueAsync<string>("key"));
-    }
-
-    [TestMethod]
-    public async Task SetWithRelativeExpirationAndGet()
-    {
-        ICache cache = new SimpleCache();
-        await cache.SetValueAsync("key", "value", TimeSpan.FromMinutes(1), false, CancellationToken.None);
-        Assert.AreEqual("value", await cache.GetValueAsync<string>("key"));
-    }
-
+    
     [TestMethod]
     public async Task GetNotFound()
     {
-        ICache cache = new SimpleCache();
+        ICache cache = GetMemoryCache();
+        await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>("key"));
+    }
+    
+    [TestMethod]
+    public async Task SetWithInvalidExpiration()
+    {
+        ICache cache = GetMemoryCache();
+        await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(-1), false, CancellationToken.None);
         await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>("key"));
     }
 
-
     [TestMethod]
-    public async Task SetWithRelativeExpirationAndGetExpired()
+    public async Task SetWithExpiration()
     {
-        ICache cache = new SimpleCache();
-        await cache.SetValueAsync("key", "value", TimeSpan.FromMinutes(-1), false, CancellationToken.None);
+        ICache cache = GetMemoryCache();
+        await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(1), false, CancellationToken.None);
+        Assert.AreEqual("value", await cache.GetValueAsync<string>("key"));
+
+        _timestampProvider.Value = 5;
         await Assert.ThrowsExceptionAsync<KeyNotFoundException>(async () => await cache.GetValueAsync<string>("key"));
     }
 
     [TestMethod]
     public async Task SetAndGetWithInvalidType()
     {
-        ICache cache = new SimpleCache();
-        await cache.SetValueAsync("key", "value", false, CancellationToken.None);
+        ICache cache = GetMemoryCache();
+        await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(10), false, CancellationToken.None);
         await Assert.ThrowsExceptionAsync<InvalidCastException>(async () => await cache.GetValueAsync<int>("key"));
     }
     
     [TestMethod]
     public async Task Delete()
     {
-        ICache cache = new SimpleCache();
-        Assert.IsTrue(await cache.SetValueAsync("key", "value", false, CancellationToken.None));
-        Assert.IsTrue(await cache.DeleteValueAsync("key"));
-    }
-    
-    [TestMethod]
-    public async Task DeleteWithValue()
-    {
-        ICache cache = new SimpleCache();
-        Assert.IsTrue(await cache.SetValueAsync("key", "value", false, CancellationToken.None));
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(1), false, CancellationToken.None));
         Assert.IsTrue(await cache.DeleteValueAsync("key", "value"));
     }
     
     [TestMethod]
     public async Task DeleteWithValueFail()
     {
-        ICache cache = new SimpleCache();
-        Assert.IsTrue(await cache.SetValueAsync("key", "value", false, CancellationToken.None));
+        ICache cache = GetMemoryCache();
+        Assert.IsTrue(await cache.SetValueAsync("key", "value", TimeSpan.FromMilliseconds(1), false, CancellationToken.None));
         Assert.IsFalse(await cache.DeleteValueAsync("key", "value2"));
     }
     
     [TestMethod]
-    public async Task IncrementAndDecrementValue()
+    public async Task IncrementAndDecrementCounter_Simple()
     {
-        ICache cache = new SimpleCache();
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key"));
-        Assert.AreEqual(1, await cache.IncrementCounterAsync("key"));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key"));
-        Assert.AreEqual(1, await cache.DecrementCounterAsync("key"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key"));
+        ICache cache = GetMemoryCache();
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
+        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
+        Assert.AreEqual(2, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(1, await cache.DecrementCounterAsync("key", "2"));
+        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
     }
     
     [TestMethod]
-    public async Task IncrementWithMaxValueAndDecrementValue()
+    public async Task IncrementAndDecrementCounter_MaxValue()
     {
-        ICache cache = new SimpleCache();
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key"));
-        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", 2));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", 2));
-        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", 2));
-        Assert.AreEqual(1, await cache.DecrementCounterAsync("key"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key"));
-        Assert.AreEqual(0, await cache.DecrementCounterAsync("key"));
+        ICache cache = GetMemoryCache();
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10), 2));
+        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10), 2));
+        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10), 2));
+        Assert.AreEqual(2, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(1, await cache.DecrementCounterAsync("key", "2"));
+        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.AreEqual(0, await cache.DecrementCounterAsync("key", "1"));
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
+    }
+
+    [TestMethod]
+    public async Task IncrementAndDecrementCounter_Expiration()
+    {
+        ICache cache = GetMemoryCache();
+        Assert.AreEqual(1, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
+        _timestampProvider.Value = 5;
+        Assert.AreEqual(1, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
+        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "2", TimeSpan.FromMilliseconds(10)));
+        Assert.AreEqual(2, await cache.GetCounterAsync("key"));
+        _timestampProvider.Value = 10;
+        Assert.AreEqual(1, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(1, await cache.GetCounterAsync("key"));
+        Assert.AreEqual(2, await cache.IncrementCounterAsync("key", "1", TimeSpan.FromMilliseconds(10)));
+        Assert.AreEqual(2, await cache.GetCounterAsync("key"));
+        _timestampProvider.Value = 15;
+        Assert.AreEqual(1, await cache.GetCounterAsync("key"));
+        _timestampProvider.Value = 20;
+        Assert.AreEqual(0, await cache.GetCounterAsync("key"));
+    }
+
+    private ICache GetMemoryCache()
+    {
+        _timestampProvider.Value = 0;
+
+        return new SimpleCache(_timestampProvider);
     }
 }

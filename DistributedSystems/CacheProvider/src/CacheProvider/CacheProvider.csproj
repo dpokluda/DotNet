@@ -7,30 +7,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Lua\DecrementCounter.lua" />
-    <None Remove="Lua\DecrementCounterWithExpiration.lua" />
-    <None Remove="Lua\DeleteValue.lua" />
-    <None Remove="Lua\GetCounter.lua" />
-    <None Remove="Lua\GetCounterWithExpiration.lua" />
-    <None Remove="Lua\IncrementCounter.lua" />
-    <None Remove="Lua\IncrementCounterWithExpiration.lua" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Lua\DecrementCounter.lua" />
-    <EmbeddedResource Include="Lua\DecrementCounterWithExpiration.lua" />
-    <EmbeddedResource Include="Lua\DeleteValue.lua" />
-    <EmbeddedResource Include="Lua\GetCounter.lua" />
-    <EmbeddedResource Include="Lua\IncrementCounter.lua" />
-    <EmbeddedResource Include="Lua\IncrementCounterWithExpiration.lua" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Polly" Version="8.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Lua\GetValue.lua" />
+    <EmbeddedResource Include="Lua\GetValue.lua" />
+    <None Remove="Lua\IncrementCounter.lua" />
+    <EmbeddedResource Include="Lua\IncrementCounter.lua" />
+    <None Remove="Lua\GetCounter.lua" />
+    <EmbeddedResource Include="Lua\GetCounter.lua" />
+    <None Remove="Lua\DeleteValue.lua" />
+    <EmbeddedResource Include="Lua\DeleteValue.lua" />
+    <None Remove="Lua\SetValue.lua" />
+    <EmbeddedResource Include="Lua\SetValue.lua" />
+    <None Remove="Lua\DecrementCounter.lua" />
+    <EmbeddedResource Include="Lua\DecrementCounter.lua" />
   </ItemGroup>
   
 </Project>

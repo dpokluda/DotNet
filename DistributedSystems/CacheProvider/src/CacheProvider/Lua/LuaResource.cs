@@ -8,13 +8,21 @@ namespace CacheProvider.Lua
     /// </summary>
     internal class LuaResource
     {
+        private static readonly Lazy<LuaScript> _setValue = new Lazy<LuaScript>(() => LoadLuaScript("SetValue"));
+        private static readonly Lazy<LuaScript> _getValue = new Lazy<LuaScript>(() => LoadLuaScript("GetValue"));
         private static readonly Lazy<LuaScript> _deleteValue = new Lazy<LuaScript>(() => LoadLuaScript("DeleteValue"));
         private static readonly Lazy<LuaScript> _incrementCounter = new Lazy<LuaScript>(() => LoadLuaScript("IncrementCounter"));
         private static readonly Lazy<LuaScript> _decrementCounter = new Lazy<LuaScript>(() => LoadLuaScript("DecrementCounter"));
-        private static readonly Lazy<LuaScript> _incrementCounterWithExpiration = new Lazy<LuaScript>(() => LoadLuaScript("IncrementCounterWithExpiration"));
-        private static readonly Lazy<LuaScript> _decrementCounterWithExpiration = new Lazy<LuaScript>(() => LoadLuaScript("DecrementCounterWithExpiration"));
         private static readonly Lazy<LuaScript> _getCounter = new Lazy<LuaScript>(() => LoadLuaScript("GetCounter"));
         
+        public static LuaScript SetValue
+        {
+            get { return _setValue.Value; }
+        }
+        public static LuaScript GetValue
+        {
+            get { return _getValue.Value; }
+        }
         public static LuaScript DeleteValue
         {
             get { return _deleteValue.Value; }
@@ -26,14 +34,6 @@ namespace CacheProvider.Lua
         public static LuaScript DecrementCounter
         {
             get { return _decrementCounter.Value; }
-        }
-        public static LuaScript IncrementCounterWithExpiration
-        {
-            get { return _incrementCounterWithExpiration.Value; }
-        }
-        public static LuaScript DecrementCounterWithExpiration
-        {
-            get { return _decrementCounterWithExpiration.Value; }
         }
         public static LuaScript GetCounter
         {

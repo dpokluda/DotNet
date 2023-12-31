@@ -1,6 +1,5 @@
 ﻿using CacheProvider;
 using Microsoft.Extensions.Logging;
-using RedisCacheProvider;
 
 namespace DistributedLock.Redis;
 
@@ -21,9 +20,14 @@ public class RedisDistributedLockHandle : IDistributedLockHandle
 
     public async Task ReleaseAsync(CancellationToken cancellationToken = default)
     {
-        await _cache.DeleteValueAsync(_lockName, _lockValue, CancellationToken.None);
+        await _cache.DeleteValueAsync(_lockName, _lockValue, cancellationToken);
     }
-    
+
+    public async Task<bool> IsStillValidAsync(CancellationToken cancellationToken = default)
+    {
+        return (await _cache.GetValueAsync<string>(_lockName, cancellationToken) == _lockValue);
+    }
+
     public async ValueTask DisposeAsync()
     {
         await ReleaseAsync(CancellationToken.None);

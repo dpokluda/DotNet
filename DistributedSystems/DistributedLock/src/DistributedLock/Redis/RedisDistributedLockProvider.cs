@@ -18,17 +18,25 @@ public class RedisDistributedLockProvider : IDistributedLockProvider
         _logger = logger;
     }
 
-    public async Task<IDistributedLockHandle> AcquireAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<IDistributedLockHandle> AcquireAsync(string name, TimeSpan expiration, CancellationToken cancellationToken = default)
     {
-        var _cache = _cacheProvider.GetCache();
+        var cache = _cacheProvider.GetCache();
         var lockName = LockPrefix + name;
         var lockValue = Guid.NewGuid().ToString("N");
-        if (await _cache.SetValueAsync(lockName, lockValue, onlyIfNew: true,
+        if (await cache.SetValueAsync(lockName, lockValue, expiration, onlyIfNew: true,
                         cancellationToken: cancellationToken))
         {
-            return new RedisDistributedLockHandle(lockName, lockValue, _cache, _logger);
+            return new RedisDistributedLockHandle(lockName, lockValue, cache, _logger);
         }
         
         throw new DistributedResourceException(UnableToAcquireExceptionMessage);
+    }
+
+    public async Task<bool> IsAcquiredAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var cache = _cacheProvider.GetCache();
+        var lockName = LockPrefix + name;
+
+        return (await cache.GetValueAsync<string>(lockName, cancellationToken: cancellationToken) != null);
     }
 }

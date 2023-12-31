@@ -1,253 +1,180 @@
-﻿namespace CacheProvider
+﻿using Newtonsoft.Json;
+
+namespace CacheProvider
 {
     public class SimpleCache : ICache
     {
-        protected class SimpleCacheEntry
+        private readonly Dictionary<string, SortedList<long, List<string>>> _cache = new();
+        private readonly ITimestampProvider _timestampProvider;
+
+        public SimpleCache(ITimestampProvider timestampProvider)
         {
-            public object? Value { get; init; }
-            public DateTimeOffset? Expiration { get; init; }
+            _timestampProvider = timestampProvider;
         }
 
-        protected readonly Dictionary<string, SimpleCacheEntry> Cache = new();
-
-        public Task<T> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
+        public Task<bool> SetValueAsync<T>(string key, T value, TimeSpan expiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
         {
-            if (Cache.TryGetValue(key, out SimpleCacheEntry? entry))
-            {
-                if (entry.Expiration.HasValue && entry.Expiration.Value < DateTimeOffset.UtcNow)
-                {
-                    throw new KeyNotFoundException("Cache entry with the specified key has already expired.");
-                }
-
-                if (entry.Value is T typedValue)
-                {
-                    return Task.FromResult(typedValue);
-                }
-                throw new InvalidCastException("Cache value is not of the specified type.");
-                
-                
-            }
-            throw new KeyNotFoundException("Cache entry with the specified key is not found.");
-        }
-
-        public Task<bool> SetValueAsync<T>(string key, T value, bool onlyIfNew = false, CancellationToken cancellationToken = default)
-        {
-            if (onlyIfNew && Cache.ContainsKey(key))
+            if (onlyIfNew && _cache.ContainsKey(key))
             {
                 return Task.FromResult(false);
             }
-            Cache[key] = new SimpleCacheEntry { Value = value };
-            return Task.FromResult(true);
-        }
 
-        public Task<bool> SetValueAsync<T>(string key, T value, TimeSpan relativeExpiration, bool onlyIfNew = false, CancellationToken cancellationToken = default)
-        {
-            if (onlyIfNew && Cache.ContainsKey(key))
+            _cache[key] = new SortedList<long, List<string>>(new Dictionary<long, List<string>>()
             {
-                return Task.FromResult(false);
-            }
-            Cache[key] = new SimpleCacheEntry { Value = value, Expiration = DateTimeOffset.UtcNow + relativeExpiration };
+                {
+                    _timestampProvider.Get() + (long)expiration.TotalMilliseconds, new List<string>()
+                    {
+                        JsonConvert.SerializeObject(value)
+                    }
+                }
+            });
+            
             return Task.FromResult(true);
         }
         
-        public Task<bool> DeleteValueAsync(string key, CancellationToken cancellationToken = default)
+        public Task<T> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
         {
-            Cache.Remove(key);
-            return Task.FromResult(true);
+            if (_cache.TryGetValue(key, out SortedList<long, List<string>>? entry))
+            {
+                var now = _timestampProvider.Get();
+                RemoveExpired(entry, now);
+                if (entry.Count == 1)
+                {
+                    try
+                    {
+                        return Task.FromResult(JsonConvert.DeserializeObject<T>(entry[entry.Keys[0]][0]));
+                    }
+                    catch (Exception e)
+                    {
+                        throw new InvalidCastException(e.Message, e);
+                    }
+                }
+            }
+            
+            throw new KeyNotFoundException("Cache entry with the specified key is not found.");
         }
 
         public async Task<bool> DeleteValueAsync<T>(string key, T value, CancellationToken cancellationToken = default) where T : IEquatable<T>
         {
             if (value.Equals(await GetValueAsync<T>(key, cancellationToken)))
             {
-                Cache.Remove(key);
+                _cache.Remove(key);
                 return true;
             }
 
             return false;
         }
 
-        public Task<int> IncrementCounterAsync(string key, CancellationToken cancellationToken = default)
-        {
-            int value = 0;
-            if (!Cache.ContainsKey(key))
-            {
-                value = 1;
-            }
-            else
-            {
-                value = Convert.ToInt32(Cache[key].Value) + 1;
-            }
-
-            Cache[key] = new SimpleCacheEntry { Value = value };
-            return Task.FromResult(value);        
-        }
-        
-        public Task<int> IncrementCounterAsync(string key, int maxValue, CancellationToken cancellationToken = default)
-        {
-            int value = 0;
-            if (!Cache.ContainsKey(key))
-            {
-                value = 1;
-            }
-            else
-            {
-                value = Math.Min(maxValue, Convert.ToInt32(Cache[key].Value) + 1);
-            }
-
-            Cache[key] = new SimpleCacheEntry { Value = value };
-            return Task.FromResult(value);        
-        }
-        
-        public Task<int> DecrementCounterAsync(string key, CancellationToken cancellationToken = default)
-        {
-            if (!Cache.ContainsKey(key))
-            {
-                return Task.FromResult(0);
-            }
-
-            var value = Math.Max(0, Convert.ToInt32(Cache[key].Value) - 1);
-            Cache[key] = new SimpleCacheEntry { Value = value };
-            return Task.FromResult(value);
-        }
-        
         public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, CancellationToken cancellationToken = default)
         {
-            // get counter ids
-            SortedList<DateTimeOffset, string> ids;
-            if (!Cache.ContainsKey(key))
-            {
-                ids = new SortedList<DateTimeOffset, string>();
-            }
-            else
-            {
-                ids = Cache[key].Value as SortedList<DateTimeOffset, string>;
-                if (ids is null)
-                {
-                    throw new ArgumentException("Key doesn't represent counter with expirations");
-                }
-            }
-
-            // remove expired
-            var now = DateTimeOffset.UtcNow;
-            RemoveExpired(ids, now);
-
-            // increment the counter
-            if (ids.ContainsValue(id))
-            {
-                throw new ArgumentException("The specified id is not unique within the key counter");
-            }
-            ids.Add(now + expiration, id);
-            
-            // update the counter
-            Cache[key] = new SimpleCacheEntry { Value = ids };
-            
-            return Task.FromResult(ids.Count);
+            return IncrementCounterAsync(key, id, expiration, Int32.MaxValue, cancellationToken);
         }
         
         public Task<int> IncrementCounterAsync(string key, string id, TimeSpan expiration, int maxValue, CancellationToken cancellationToken = default)
         {
-            // get counter ids
-            SortedList<DateTimeOffset, string> ids;
-            if (!Cache.ContainsKey(key))
+            var now = _timestampProvider.Get();
+            if (!_cache.TryGetValue(key, out SortedList<long, List<string>>? entry))
             {
-                ids = new SortedList<DateTimeOffset, string>();
+                // create new
+                entry = new SortedList<long, List<string>>();
+                _cache[key] = entry;
             }
             else
             {
-                ids = Cache[key].Value as SortedList<DateTimeOffset, string>;
-                if (ids is null)
+                // clean expired items
+                RemoveExpired(entry, now);
+                
+                if (entry.Values
+                    .SelectMany(values => values)
+                    .Any(value => value == id))
                 {
-                    throw new ArgumentException("Key doesn't represent counter with expirations");
+                    return Task.FromResult(GetCounterCount(entry));
                 }
             }
-
-            // remove expired
-            var now = DateTimeOffset.UtcNow;
-            RemoveExpired(ids, now);
-
-            // check id uniqueness
-            if (ids.ContainsValue(id))
-            {
-                throw new ArgumentException("The specified id is not unique within the key counter");
-            }
-
-            // increment the counter
-            if (ids.Count < maxValue)
-            {
-                ids.Add(now + expiration, id);
-            }
-            // update the counter
-            Cache[key] = new SimpleCacheEntry { Value = ids };
             
-            return Task.FromResult(ids.Count);
+            // increment the counter
+            if (entry.Count < maxValue)
+            {
+                if (entry.ContainsKey(now + (long)expiration.TotalMilliseconds))
+                {
+                    entry[now + (long)expiration.TotalMilliseconds].Add(id);
+                }
+                else
+                {
+                    entry.Add(now + (long)expiration.TotalMilliseconds, new List<string>() { id });
+                }
+            }
+            
+            return Task.FromResult(GetCounterCount(entry));
         }
         
         public Task<int> DecrementCounterAsync(string key, string id, CancellationToken cancellationToken = default)
         {
-            // get counter ids
-            SortedList<DateTimeOffset, string> ids;
-            if (!Cache.ContainsKey(key))
+            var now = _timestampProvider.Get();
+            if (!_cache.TryGetValue(key, out SortedList<long, List<string>>? entry))
             {
-                ids = new SortedList<DateTimeOffset, string>();
+                // counter doesn't exist
+                return Task.FromResult(0);
             }
-            else
+            
+            // clean expired items
+            RemoveExpired(entry, now);
+            
+            // remove item with value `id`
+            var keysToRemove = new List<long>();
+            foreach (var entryIds in entry)
             {
-                ids = Cache[key].Value as SortedList<DateTimeOffset, string>;
-                if (ids is null)
+                if (entryIds.Value.Count == 1 && entryIds.Value[0] == id)
                 {
-                    throw new NotSupportedException();
+                    keysToRemove.Add(entryIds.Key);
+                }
+                else
+                {
+                    entryIds.Value.Remove(id);
                 }
             }
+            // var keysToRemove =
+            //     from item in entry
+            //     where item.Value == id
+            //     select item.Key;
+            foreach (var keyToRemove in keysToRemove.ToArray())
+            {
+                entry.Remove(keyToRemove);
+            }
 
-            // remove expired
-            var now = DateTimeOffset.UtcNow;
-            RemoveExpired(ids, now);
-
-            // update the counter
-            Cache[key] = new SimpleCacheEntry { Value = ids };
-            
-            return Task.FromResult(ids.Count);
+            return Task.FromResult(GetCounterCount(entry));
         }
 
         public Task<int> GetCounterAsync(string key, CancellationToken cancellationToken = default)
         {
-            // get counter ids
-            SortedList<DateTimeOffset, string> ids;
-            if (!Cache.ContainsKey(key))
+            var now = _timestampProvider.Get();
+            if (!_cache.TryGetValue(key, out SortedList<long, List<string>>? entry))
             {
+                // counter doesn't exist
                 return Task.FromResult(0);
             }
-
-            // if simple counter, then simply return value
-            if (Cache[key].Value is int)
-            {
-                return Task.FromResult((int) Cache[key].Value);
-            }
             
-            // if counter with expirations; we need to remove expired ids first
-            ids = Cache[key].Value as SortedList<DateTimeOffset, string>;
-            if (ids is null)
-            {
-                throw new NotSupportedException();
-            }
-
-            // remove expired
-            var now = DateTimeOffset.UtcNow;
-            RemoveExpired(ids, now);
+            // clean expired items
+            RemoveExpired(entry, now);
             
-            return Task.FromResult(ids.Count);
+            return Task.FromResult(GetCounterCount(entry));
         }
-        
-        private static void RemoveExpired(SortedList<DateTimeOffset, string>? ids, DateTimeOffset now)
+
+        private static int GetCounterCount(SortedList<long, List<string>> entry)
         {
-            var toRemove = 
-                from k in ids.Keys
-                where k < now
-                select k;
-            foreach (var keyToRemove in toRemove)
+            return entry.Values.Sum(ids => ids.Count);
+        }
+
+        private static void RemoveExpired(SortedList<long, List<string>> ids, long now)
+        {
+            var expiredKeys = 
+                from expiration in ids.Keys
+                where expiration <= now
+                select expiration;
+            
+            foreach (var key in expiredKeys.ToArray())
             {
-                ids.Remove(keyToRemove);
+                ids.Remove(key);
             }
         }
     }
