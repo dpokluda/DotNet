@@ -4,6 +4,10 @@ namespace CacheProvider
 {
     public class SimpleCache : ICache
     {
+        // cache is keyed by counter name (key)
+        // - each cache value contain the actual counter values
+        //        - counter values is sorted list sorted by expiration date
+        //        - sorted list values are actual ids (it is possible that counter is incremented multiple times at the same time
         private readonly Dictionary<string, SortedList<long, List<string>>> _cache = new();
         private readonly ITimestampProvider _timestampProvider;
 
@@ -22,7 +26,8 @@ namespace CacheProvider
             _cache[key] = new SortedList<long, List<string>>(new Dictionary<long, List<string>>()
             {
                 {
-                    _timestampProvider.Get() + (long)expiration.TotalMilliseconds, new List<string>()
+                    _timestampProvider.Get() + (long)expiration.TotalMilliseconds,
+                    new List<string>()
                     {
                         JsonConvert.SerializeObject(value)
                     }
@@ -48,6 +53,10 @@ namespace CacheProvider
                     {
                         throw new InvalidCastException(e.Message, e);
                     }
+                }
+                else
+                {
+                    throw new InvalidDataException();
                 }
             }
             
@@ -88,6 +97,7 @@ namespace CacheProvider
                     .SelectMany(values => values)
                     .Any(value => value == id))
                 {
+                    // already exists
                     return Task.FromResult(GetCounterCount(entry));
                 }
             }
@@ -133,10 +143,7 @@ namespace CacheProvider
                     entryIds.Value.Remove(id);
                 }
             }
-            // var keysToRemove =
-            //     from item in entry
-            //     where item.Value == id
-            //     select item.Key;
+
             foreach (var keyToRemove in keysToRemove.ToArray())
             {
                 entry.Remove(keyToRemove);
