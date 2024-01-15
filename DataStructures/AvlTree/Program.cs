@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Tree;
+﻿namespace AvlTree;
 
 class Program
 {
@@ -21,7 +19,7 @@ class Program
         
         Console.WriteLine("Tree: ");
         tree.PrintTree();
-         
+        
         Console.WriteLine("\nUNBALANCED:");
         tree = new Tree<int>();
         for (int i = 9; i >0; i--)

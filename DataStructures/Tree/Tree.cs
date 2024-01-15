@@ -43,6 +43,12 @@ public class Tree<T>
         Print(_root);
         Console.WriteLine();
     }
+
+    public void PrintTree()
+    {
+        PrintTree(_root);
+        Console.WriteLine();
+    }
     
     private void Insert(Node<T> node, T item)
     {
@@ -79,5 +85,29 @@ public class Tree<T>
         Print(node.Left);
         Console.Write(node.Data + " ");
         Print(node.Right);
+    }
+    
+    private void PrintTree(Node<T> root)
+    {
+        var currentLevel = new Queue<Node<T>>();
+        var nextLevel = new Queue<Node<T>>();
+
+        currentLevel.Enqueue(root);
+        while (currentLevel.Count > 0 || nextLevel.Count > 0)
+        {
+            if (currentLevel.Count == 0)
+            {
+                currentLevel = nextLevel;
+                nextLevel = new Queue<Node<T>>();
+                Console.WriteLine();
+            }
+            var node = currentLevel.Dequeue();
+            Console.Write(node.Data + " ");
+
+            if (node.Left != null)
+                nextLevel.Enqueue(node.Left);
+            if (node.Right != null)
+                nextLevel.Enqueue(node.Right);
+        }
     }
 }
