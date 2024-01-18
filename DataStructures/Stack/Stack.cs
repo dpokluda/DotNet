@@ -6,57 +6,57 @@ public class Stack<T>
 {
     private T[] _data;
     private int _capacity;
-    private int _top_index;
+    private int _size;
 
     public Stack()
     {
         _data = null;
         _capacity = 0;
-        _top_index = 0;
+        _size = 0;
     }
 
     public bool IsEmpty()
     {
-        return _top_index == 0;
+        return _size == 0;
     }
 
     public int GetSize()
     {
-        return _top_index;
+        return _size;
     }
     
     public void Push(T item)
     {
-        if (_top_index == _capacity)
+        if (_size == _capacity)
         {
             Resize(_capacity == 0 ? 1 : _capacity * 2);
         }
-        _data[_top_index++] = item;
+        _data[_size++] = item;
     }
 
     public T Pop()
     {
-        if (_top_index == 0)
+        if (_size == 0)
         {
             throw new InvalidOperationException("Stack is empty");
         }
 
-        return _data[--_top_index];
+        return _data[--_size];
     }
 
     public T Peek()
     {
-        if (_top_index == 0)
+        if (_size == 0)
         {
             throw new InvalidOperationException("Stack is empty");
         }
 
-        return _data[_top_index - 1];
+        return _data[_size - 1];
     }
 
     public void Print()
     {
-        for (int i = 0; i < _top_index; ++i)
+        for (int i = 0; i < _size; ++i)
         {
             Console.Write(_data[i] + ", ");
         }
@@ -68,7 +68,7 @@ public class Stack<T>
         var newData = new T[newCapacity];
         if (_data != null)
         {
-            for (int i = 0; i < _top_index; ++i)
+            for (int i = 0; i < _size; ++i)
             {
                 newData[i] = _data[i];
             }

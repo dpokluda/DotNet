@@ -72,6 +72,8 @@ public class Tree<T> where T : IComparable<T>
     }
 
     // Get the balance factor of a node
+    // > 1: Left heavy
+    // < -1: Right heavy
     private int GetBalanceFactor(Node<T> node)
     {
         return node == null ? 0 : GetHeight(node.Left) - GetHeight(node.Right);
@@ -85,6 +87,7 @@ public class Tree<T> where T : IComparable<T>
         // Left heavy
         if (balanceFactor > 1)
         {
+            // Left-right heavy
             if (GetBalanceFactor(node.Left) < 0)
             {
                 node.Left = LeftRotate(node.Left);
@@ -95,6 +98,7 @@ public class Tree<T> where T : IComparable<T>
         // Right heavy
         if (balanceFactor < -1)
         {
+            // Right-left heavy
             if (GetBalanceFactor(node.Right) > 0)
             {
                 node.Right = RightRotate(node.Right);
