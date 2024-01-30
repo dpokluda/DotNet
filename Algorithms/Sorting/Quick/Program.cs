@@ -31,26 +31,23 @@ namespace Quick
  
             // pivot
             int pivot = data[right];
- 
-            // Index of smaller element and
-            // indicates the right position
-            // of pivot found so far
-            int i = (left - 1);
- 
-            for (int j = left; j <= right - 1; j++)
+
+            int pivotIndex = left - 1; // if all items will be bigger; then it will go to `+1` index (which is `left`)
+            for (int i = left; i < right; i++)
             {
-                // If current element is smaller
-                // than the pivot
-                if (data[j] < pivot)
+                if (data[i] < pivot)
                 {
-                    i++;
-                    Swap(data, i, j);
+                    // since the data is smaller; pivotIndex needs to move to the right (by as many positions as many items are smaller than it)
+                    pivotIndex++;
+                    // replace them; the item that is smaller is replaced item at last position before pivot index so far
+                    Swap(data, i, pivotIndex);
                 }
             }
+ 
+            // finally replace smaller item larger than pivot with pivot; now we have {all-smaller}-pivot-{all-larger}
+            Swap(data, pivotIndex + 1, right);
             
-            Swap(data, i + 1, right);
-            
-            return (i + 1);
+            return (pivotIndex + 1);
         }
         
         private static void Swap(int[] data, int first, int second)
