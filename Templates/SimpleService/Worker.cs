@@ -18,6 +18,13 @@ namespace SimpleService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            string logMessage = "Background worker is running";
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                logMessage += " in debug mode";
+            }
+            _logger.LogInformation(logMessage);
+            
             while (!stoppingToken.IsCancellationRequested)
             {
                 // Console output will not be visible when running in docker
