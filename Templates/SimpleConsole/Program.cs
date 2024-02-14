@@ -57,7 +57,13 @@ namespace SimpleConsole
         {
             // retrieve logger
             var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation("Program is running");
+            string logMessage = "Program is running";
+            if (logger.IsEnabled(LogLevel.Debug))
+            {
+                logMessage += " in debug mode";
+            }
+            logger.LogInformation(logMessage);
+            
             // retrieve singleton dependency
             var test = services.GetRequiredService<ITest>();
             Console.WriteLine($"Name: {test.Name}");
