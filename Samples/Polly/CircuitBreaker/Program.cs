@@ -10,28 +10,41 @@ namespace SimpleConsole
 
         static async Task Main(string[] args)
         {
-            // Define the CircuitBreaker policy
-            var circuitBreakerPolicy = Policy
-                .Handle<System.Exception>()
-                .CircuitBreaker(
-                    exceptionsAllowedBeforeBreaking: 2,
-                    durationOfBreak: TimeSpan.FromSeconds(10),
-                    onBreak: (ex, breakDelay) =>
-                    {
-                        Console.WriteLine($"Circuit broken! Exception: {ex.Message}. Breaking for {breakDelay.TotalSeconds} seconds.");
-                    },
-                    onReset: () => Console.WriteLine("Circuit reset."),
-                    onHalfOpen: () => Console.WriteLine("Circuit half-open, next call is a trial.")
-                );
-
-            // Simulate calls with the CircuitBreaker policy
+            // Define the CircuitBreaker strategy
+            var circuitBreakerOptions = new CircuitBreakerStrategyOptions()
+            {
+                FailureRatio = 0.5,
+                MinimumThroughput = 4,
+                BreakDuration = TimeSpan.FromSeconds(10),
+                ShouldHandle = new PredicateBuilder().Handle<System.Exception>(),
+                OnOpened = args =>
+                {
+                    Console.WriteLine($"Circuit opened! Exception: {args.Outcome.Exception.Message}. Breaking for {args.BreakDuration.TotalSeconds} seconds.");
+                    return ValueTask.CompletedTask;
+                },
+                OnClosed = args =>
+                {
+                    Console.WriteLine("Circuit closed.");
+                    return ValueTask.CompletedTask;
+                },
+                OnHalfOpened = args =>
+                {
+                    Console.WriteLine("Circuit half-open.");
+                    return ValueTask.CompletedTask;
+                },
+            };
+            var circuitBreaker = new ResiliencePipelineBuilder()
+                .AddCircuitBreaker(circuitBreakerOptions)
+                .Build();
+            
+            // Simulate calls with the CircuitBreaker
             while (true)
             {
                 for (int i = 0; i < 5; i++)
                 {
                     try
                     {
-                        circuitBreakerPolicy.Execute(() =>
+                        circuitBreaker.Execute(() =>
                         {
                             Console.WriteLine("Attempting action...");
                             PerformOperation(i);
@@ -51,8 +64,6 @@ namespace SimpleConsole
                 await Task.Delay(5000);
                 Console.WriteLine();
             }
-            
-            
         }
 
         static void PerformOperation(int iteration)

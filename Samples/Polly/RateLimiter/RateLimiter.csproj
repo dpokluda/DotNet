@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <PackageReference Include="Polly" Version="8.3.0" />
+      <PackageReference Include="Polly.RateLimiting" Version="8.3.0" />
     </ItemGroup>
 
 </Project>

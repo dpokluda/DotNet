@@ -1,4 +1,5 @@
 ﻿using Polly;
+using Polly.Retry;
 using SimpleConsole.Exceptions;
 
 namespace SimpleConsole
@@ -9,16 +10,24 @@ namespace SimpleConsole
 
         static void Main(string[] args)
         {
-            // Define the retry policy: retry 3 times with a 2-second delay between retries
-            var retryPolicy = Policy
-                .Handle<MyException1>()
-                .Or<MyException2>()
-                .WaitAndRetry(3, retryAttempt => TimeSpan.FromSeconds(2),
-                    (exception, timeSpan, retryCount, context) =>
-                    {
-                        Console.WriteLine($"Attempt {retryCount}: Retrying in {timeSpan.Seconds} seconds due to {exception.Message}");
-                    });
-
+            // Define the retry strategy: retry 3 times with a 2-second delay between retries
+            var retryOptions = new RetryStrategyOptions()
+            {
+                ShouldHandle = new PredicateBuilder()
+                    .Handle<MyException1>()
+                    .Handle<MyException2>(),
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(2),
+                OnRetry = args =>
+                {
+                    Console.WriteLine($"Attempt {args.AttemptNumber}: Retrying in {args.RetryDelay.TotalSeconds}  seconds due to {args.Outcome.Exception.Message}");
+                    return ValueTask.CompletedTask;
+                }
+            };
+            var retryPolicy = new ResiliencePipelineBuilder()
+                .AddRetry(retryOptions)
+                .Build();
+            
             try
             {
                 // Execute the operation within the retry policy
