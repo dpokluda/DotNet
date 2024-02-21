@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Service\Service.csproj", "{6CC2F2BD-2E7A-4EB9-B44A-30863FB6AEDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestsWithMocks", "TestsWithMocks\TestsWithMocks.csproj", "{A36A9717-CD87-401E-BFE8-F1BECF70E198}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestsWithDoubles", "TestsWithDoubles\TestsWithDoubles.csproj", "{EC29CF32-938F-4BB5-B8E1-B07C87BA9DE0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CC2F2BD-2E7A-4EB9-B44A-30863FB6AEDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CC2F2BD-2E7A-4EB9-B44A-30863FB6AEDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CC2F2BD-2E7A-4EB9-B44A-30863FB6AEDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CC2F2BD-2E7A-4EB9-B44A-30863FB6AEDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A36A9717-CD87-401E-BFE8-F1BECF70E198}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A36A9717-CD87-401E-BFE8-F1BECF70E198}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A36A9717-CD87-401E-BFE8-F1BECF70E198}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A36A9717-CD87-401E-BFE8-F1BECF70E198}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC29CF32-938F-4BB5-B8E1-B07C87BA9DE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC29CF32-938F-4BB5-B8E1-B07C87BA9DE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC29CF32-938F-4BB5-B8E1-B07C87BA9DE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC29CF32-938F-4BB5-B8E1-B07C87BA9DE0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
