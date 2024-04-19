@@ -32,12 +32,12 @@ public class EventHubReceiver
         
         _client = new EventProcessorClient(storageClient, consumerGroup, eventHubConnectionString, eventHubName);
         // partition events
-        _client.PartitionInitializingAsync += PartitionInitializingAsync;
-        _client.PartitionClosingAsync += PartitionClosingAsync;
+        _client.PartitionInitializingAsync += OnPartitionInitializingAsync;
+        _client.PartitionClosingAsync += OnPartitionClosingAsync;
         
         // processing events
-        _client.ProcessEventAsync += ProcessEventAsync;
-        _client.ProcessErrorAsync += ProcessErrorAsync;
+        _client.ProcessEventAsync += OnProcessEventAsync;
+        _client.ProcessErrorAsync += OnProcessErrorAsync;
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public class EventHubReceiver
         _logger.LogDebug("Stopped processing events.");
     }
     
-    private async Task ProcessEventAsync(ProcessEventArgs arg)
+    private async Task OnProcessEventAsync(ProcessEventArgs arg)
     {
         var body = Encoding.UTF8.GetString(arg.Data.Body.ToArray());
         ConsoleEx.Write(ConsoleColor.Cyan, $"    Received event on partition {arg.Partition.PartitionId}: ");
@@ -73,19 +73,19 @@ public class EventHubReceiver
         _logger.LogDebug($"Updated checkpoint for partition {arg.Partition.PartitionId}");
     }
 
-    private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
+    private Task OnProcessErrorAsync(ProcessErrorEventArgs arg)
     {
         ConsoleEx.WriteLine(ConsoleColor.Red, $"Error on partition {arg.PartitionId}: {arg.Exception.Message}");
         return Task.CompletedTask;
     }
 
-    private Task PartitionInitializingAsync(PartitionInitializingEventArgs arg)
+    private Task OnPartitionInitializingAsync(PartitionInitializingEventArgs arg)
     {
         ConsoleEx.WriteLine(ConsoleColor.Green, $"Connected to partition {arg.PartitionId}");
         return Task.CompletedTask;
     }
     
-    private Task PartitionClosingAsync(PartitionClosingEventArgs arg)
+    private Task OnPartitionClosingAsync(PartitionClosingEventArgs arg)
     {
         ConsoleEx.WriteLine(ConsoleColor.Magenta, $"Disconnected from partition {arg.PartitionId}");
         return Task.CompletedTask;
