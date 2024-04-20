@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventHubSender", "EventHubS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventHubReceiver", "EventHubReceiver\EventHubReceiver.csproj", "{537E2091-6872-4A56-9576-75097183874D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventHubPartitionReceiver", "EventHubPartitionReceiver\EventHubPartitionReceiver.csproj", "{28DDB16E-B1BD-4F4C-BDF9-A17B43DC46E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{537E2091-6872-4A56-9576-75097183874D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{537E2091-6872-4A56-9576-75097183874D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{537E2091-6872-4A56-9576-75097183874D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28DDB16E-B1BD-4F4C-BDF9-A17B43DC46E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28DDB16E-B1BD-4F4C-BDF9-A17B43DC46E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28DDB16E-B1BD-4F4C-BDF9-A17B43DC46E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28DDB16E-B1BD-4F4C-BDF9-A17B43DC46E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
