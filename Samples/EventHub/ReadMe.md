@@ -1,4 +1,4 @@
-# EventHubTest
+# EventHub
 
 This is a set of helper tools to interact with an Event Hub. Assuming you have a working Event Hub, you can these tools to send events to it or to receive the events. There are three main tools:
 
@@ -21,13 +21,13 @@ Run with `--help` command line arguments to see the list of available options:
 **Example:** The following command would start the tool, send batch of 100 events to the configured Event Hub and stop. 
 
 ```shell
-dotnet run -- --number 100
+EventHubSender --number 100
 ```
 
 **Example:** The following command would start the tool and continuously send batch of 5 events to the configured Event Hub. The tool will wait for 10 seconds between the batches.
 
 ```shell
-dotnet run -- --number 5 --auto --delay 10
+EventHubSender --number 5 --auto --delay 10
 ```
 
 ## EventHubReceiver
@@ -45,13 +45,13 @@ Run with `--help` command line arguments to see the list of available options:
 **Example:** The following command would start the tool and receive events for 5 seconds and then stop.
 
 ```shell
-dotnet run -- --time 5
+EventHubReceiver --time 5
 ```
 
 **Example:** The following command would start the tool and receive events until you press a key on your keyboard.
 
 ```shell
-dotnet run -- 
+EventHubReceiver 
 ```
 
 ## EventHubPartitionReceiver
@@ -69,12 +69,12 @@ Run with `--help` command line arguments to see the list of available options:
 **Example:** The following command would start the tool and receive events for 5 seconds and then stop.
 
 ```shell
-dotnet run -- --time 5
+EventHubPartitionReceiver --time 5
 ```
 
 **Example:** The following command would start the tool and receive events until you press a key on your keyboard.
 
 ```shell
-dotnet run -- 
+EventHubPartitionReceiver
 ```
 
