@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyChannel", "MyChannel\MyChannel.csproj", "{A016DA59-2C98-4DBD-B7BF-258783A98CD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyChannelTests", "MyChannelTests\MyChannelTests.csproj", "{D3DFD2F0-36AB-4FB0-B873-993F545E10DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A016DA59-2C98-4DBD-B7BF-258783A98CD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A016DA59-2C98-4DBD-B7BF-258783A98CD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A016DA59-2C98-4DBD-B7BF-258783A98CD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A016DA59-2C98-4DBD-B7BF-258783A98CD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3DFD2F0-36AB-4FB0-B873-993F545E10DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3DFD2F0-36AB-4FB0-B873-993F545E10DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3DFD2F0-36AB-4FB0-B873-993F545E10DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3DFD2F0-36AB-4FB0-B873-993F545E10DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

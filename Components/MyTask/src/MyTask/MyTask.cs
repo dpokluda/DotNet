@@ -3,24 +3,67 @@ using System.Runtime.ExceptionServices;
 
 namespace MyTask;
 
+/// <summary>
+/// Custom implementation of Task class (based on https://www.youtube.com/watch?v=R-z2Hv-7nxk).
+/// </summary>
 public class MyTask
 {
-    private object _syncRoot = new object();
+    private readonly object _syncRoot = new object();
     private bool _completed;
     private Exception? _exception;
     private Action? _continuation;
     private ExecutionContext? _context;
 
+    /// <summary>
+    /// A simplified custom awaiter implementation for MyTask.
+    /// </summary>
+    /// <param name="t">A MyTask to process.</param>
     public struct Awaiter(MyTask t) : INotifyCompletion
     {
+        /// <summary>
+        /// Gets the awaiter.
+        /// </summary>
+        /// <returns>
+        /// The awaiter.
+        /// </returns>
         public Awaiter GetAwaiter() => this;
+
+        /// <summary>
+        /// Gets a value indicating whether this MyTask is completed.
+        /// </summary>
+        /// <value>
+        /// True if this MyTask is completed, false if not.
+        /// </value>
         public bool IsCompleted => t.IsCompleted;
+
+        /// <summary>
+        /// Schedules the continuation action that's invoked when the instance completes.
+        /// </summary>
+        /// <exception cref="T:System.ArgumentNullException">The <paramref name="continuation" /> argument is null (Nothing in Visual Basic).</exception>
+        /// <param name="continuation">The action to invoke when the operation completes.</param>
+        /// <seealso cref="INotifyCompletion.OnCompleted(Action)"/>
         public void OnCompleted(Action continuation) => t.ContinueWith(continuation);
+
+        /// <summary>
+        /// Gets the result.
+        /// </summary>
         public void GetResult() => t.Wait();
     }
 
+    /// <summary>
+    /// Gets the awaiter.
+    /// </summary>
+    /// <returns>
+    /// The awaiter.
+    /// </returns>
     public Awaiter GetAwaiter() => new(this);
 
+    /// <summary>
+    /// Gets a value indicating whether this MyTask is completed.
+    /// </summary>
+    /// <value>
+    /// True if this MyTask is completed, false if not.
+    /// </value>
     public bool IsCompleted
     {
         get
@@ -32,11 +75,18 @@ public class MyTask
         }
     }
 
+    /// <summary>
+    /// Sets the result.
+    /// </summary>
     public void SetResult()
     {
         Complete(null);
     }
-    
+
+    /// <summary>
+    /// Sets an exception.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
     public void SetException(Exception exception)
     {
         Complete(exception);
@@ -70,7 +120,10 @@ public class MyTask
             }
         }
     }
-    
+
+    /// <summary>
+    /// Waits this MyTask.
+    /// </summary>
     public void Wait()
     {
         ManualResetEventSlim? mres = null;
@@ -92,6 +145,13 @@ public class MyTask
         }
     }
 
+    /// <summary>
+    /// Continue with.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public MyTask ContinueWith(Action action)
     {
         MyTask task = new MyTask();
@@ -126,7 +186,14 @@ public class MyTask
 
         return task;
     }
-    
+
+    /// <summary>
+    /// Continue with.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public MyTask ContinueWith(Func<MyTask> action)
     {
         MyTask t = new();
@@ -170,6 +237,14 @@ public class MyTask
 
         return t;
     }
+
+    /// <summary>
+    /// Runs the given action.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public static MyTask Run(Action action)
     {
         MyTask task = new MyTask();
@@ -191,6 +266,13 @@ public class MyTask
         return task;
     }
 
+    /// <summary>
+    /// When all.
+    /// </summary>
+    /// <param name="tasks">The tasks.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public static MyTask WhenAll(List<MyTask> tasks)
     {
         MyTask task = new MyTask();
@@ -221,6 +303,13 @@ public class MyTask
         return task;
     }
 
+    /// <summary>
+    /// When any.
+    /// </summary>
+    /// <param name="tasks">The tasks.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public static MyTask WhenAny(List<MyTask> tasks)
     {
         MyTask task = new MyTask();
@@ -241,7 +330,14 @@ public class MyTask
         
         return task;
     }
-    
+
+    /// <summary>
+    /// Delays.
+    /// </summary>
+    /// <param name="milliseconds">The milliseconds.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public static MyTask Delay(int milliseconds)
     {
         MyTask task = new MyTask();
@@ -253,7 +349,13 @@ public class MyTask
         return task;
     }
 
-
+    /// <summary>
+    /// Iterates the given tasks.
+    /// </summary>
+    /// <param name="tasks">The tasks.</param>
+    /// <returns>
+    /// A MyTask.
+    /// </returns>
     public static MyTask Iterate(IEnumerable<MyTask> tasks)
     {
         MyTask task = new MyTask();

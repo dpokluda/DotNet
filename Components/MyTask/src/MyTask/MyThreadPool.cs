@@ -2,6 +2,9 @@
 
 namespace MyTask;
 
+/// <summary>
+/// Custom implementation of ThreadPool class (based on https://www.youtube.com/watch?v=R-z2Hv-7nxk).
+/// </summary>
 public static class MyThreadPool
 {
     // ExecutionContent is pretty much just a dictionary of key value pairs stored in a thread local storage with some APIs to manipulate it.
@@ -33,6 +36,10 @@ public static class MyThreadPool
         }
     }
 
+    /// <summary>
+    /// Queues a method for execution. The method executes when a thread pool thread becomes available.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
     public static void QueueUserWorkItem(Action action)
     {
         s_workItems.Add((action, ExecutionContext.Capture()));
